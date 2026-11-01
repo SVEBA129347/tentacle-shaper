@@ -80,7 +80,9 @@
     var T1 = points(path(b, 'Tangents_1/Polygone3d'));
     var T2 = points(path(b, 'Tangents_2/Polygone3d'));
     var ct = P.map(function (_, i) { return parseInt(text(b, 'Control_type_point_' + i), 10) || 0; });
-    return new Curve(P, T1, T2, ct, text(b, 'Name') || '');
+    var c = new Curve(P, T1, T2, ct, text(b, 'Name') || '');
+    c.node = b;
+    return c;
   }
 
   // ---------- разбор файла ----------
@@ -98,7 +100,7 @@
 
     var board = {
       fileName: fileName || '',
-      rawText: txt,
+      rawText: txt, doc: doc, B: B,
       name: text(B, 'Name') || '',
       length: num(B, 'Length'),
       info: {},
@@ -122,6 +124,10 @@
       });
     }
 
+    // толщина стрингера относительно низа (Stringer Top «привязан» к Stringer Bot)
+    var s4 = kid(B, 'curveDefSide4');
+    board.thickDiff = s4 ? readCurve(kid(kid(s4, 'BezierDef'), 'BezDiffRelativeTo')) : null;
+
     var ns = parseInt(text(B, 'Number_of_slices'), 10) || 0;
     for (var k = 0; k < ns; k++) {
       var c = readCurve(kid(B, 'Couples_' + k));
@@ -130,6 +136,52 @@
     if (!board.otl || !board.strbot || !board.strdeck || board.slices.length < 2)
       throw new Error('Не хватает кривых доски (контур, стрингер или сечения)');
     return board;
+  };
+
+  // ---------- запись ----------
+  function f6(v) { return (Math.abs(v) < 5e-7 ? 0 : v).toFixed(6); }
+  function writePoints(poly, pts) {
+    var ps = kids(poly, 'Point3d');
+    for (var i = 0; i < ps.length && i < pts.length; i++) {
+      ['x', 'y', 'z'].forEach(function (t, k) {
+        var n = kid(ps[i], t);
+        // неизменённые числа не трогаем — файл остаётся байт в байт
+        if (n && Math.abs(parseFloat(n.textContent) - pts[i][k]) > 5e-7) n.textContent = f6(pts[i][k]);
+      });
+    }
+  }
+  function writeCurve(c) {
+    if (!c || !c.node) return;
+    writePoints(path(c.node, 'Control_points/Polygone3d'), c.P);
+    writePoints(path(c.node, 'Tangents_1/Polygone3d'), c.T1);
+    writePoints(path(c.node, 'Tangents_2/Polygone3d'), c.T2);
+  }
+  TS.copyCurveInto = function (src, dst) {
+    if (!src || !dst || src === dst) return;
+    dst.P = src.P.map(function (p) { return p.slice(); });
+    dst.T1 = src.T1.map(function (p) { return p.slice(); });
+    dst.T2 = src.T2.map(function (p) { return p.slice(); });
+  };
+
+  // fields: {Length, Width, ...} — числа для полей доски (в единицах файла)
+  TS.writeS3dx = function (board, fields) {
+    var B = board.B;
+    var curves = [board.otl, board.strbot, board.strdeck, board.thickDiff].concat(board.slices);
+    Object.keys(board.top).forEach(function (k) { curves.push(board.top[k].curve); });
+    Object.keys(board.side).forEach(function (k) { curves.push(board.side[k].curve); });
+    curves.forEach(writeCurve);
+    Object.keys(fields || {}).forEach(function (k) {
+      var n = kid(B, k);
+      if (n && isFinite(fields[k]) && Math.abs(parseFloat(n.textContent) - fields[k]) > 5e-4) n.textContent = fields[k].toFixed(3);
+    });
+    var out = new XMLSerializer().serializeToString(board.doc);
+    out = out.replace(/<([^\s\/<>]+)\/>/g, '<$1></$1>');           // Shape3D пишет пустые теги парой
+    out = out.split('Ref_point>').join('Ref. point>');
+    out = out.replace(/\r?\n/g, '\r\n').replace('?><', '?>\r\n<');
+    if (/\r\n$/.test(board.rawText) && !/\r\n$/.test(out)) out += '\r\n';
+    var bytes = new Uint8Array(out.length);
+    for (var i = 0; i < out.length; i++) { var c = out.charCodeAt(i); bytes[i] = c < 256 ? c : 63; }
+    return bytes;
   };
 
   TS.Curve = Curve;

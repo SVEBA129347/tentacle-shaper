@@ -18,10 +18,19 @@
       self.ox = mx - w[0] * self.s; self.oy = my + w[1] * self.s * self.exag;
       self.redraw();
     }, { passive: false });
+    var edit = false;
     canvas.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      TS.activeView = self;
+      var r = canvas.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+      if (self.o.onDown && self.o.onDown(sx, sy, e, self)) { edit = true; e.preventDefault(); return; }
       drag = { x: e.clientX, y: e.clientY, ox: self.ox, oy: self.oy }; moved = false;
     });
     window.addEventListener('mousemove', function (e) {
+      if (edit) {
+        var r = canvas.getBoundingClientRect(), w = self.toWorld(e.clientX - r.left, e.clientY - r.top);
+        self.o.onDrag(w[0], w[1], e, self); return;
+      }
       if (drag) {
         var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
         if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
@@ -34,6 +43,7 @@
       self.o.onMove(w[0], w[1]);
     });
     window.addEventListener('mouseup', function (e) {
+      if (edit) { edit = false; if (self.o.onUp) self.o.onUp(e, self); return; }
       if (drag && !moved && e.target === canvas && self.o.onClick) {
         var r = canvas.getBoundingClientRect(), w = self.toWorld(e.clientX - r.left, e.clientY - r.top);
         self.o.onClick(w[0], w[1]);

@@ -12,6 +12,9 @@
   <div class="brand"><svg class="logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19c4 0 6-3 6-7s2-7 6-7c2.5 0 4 1.6 4 3.6 0 1.8-1.3 3-3 3-1.5 0-2.5-1-2.5-2.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg> Tentacle Shaper</div>
   <button id="openBtn" class="primary" data-i18n="open">Открыть .s3dx</button>
   <input id="file" type="file" accept=".s3dx" hidden>
+  <button id="saveBtn" class="needs-board" data-i18n="save" data-i18n-title="saveTip">Сохранить .s3dx</button>
+  <button id="undoBtn" class="needs-board icon" data-i18n-title="undo">↶</button>
+  <button id="redoBtn" class="needs-board icon" data-i18n-title="redo">↷</button>
   <nav class="tabs">
     <button class="tab on" data-tab="design" data-i18n="design">Проектирование</button>
     <button class="tab" data-tab="3d" data-i18n="view3d">3D</button>
@@ -34,7 +37,9 @@
     <div class="views design-only">
       <div class="pane top"><div class="ptitle" data-i18n="top">Вид сверху</div><canvas id="cTop"></canvas></div>
       <div class="pane slice"><div class="ptitle" data-i18n="slice">Сечение</div><canvas id="cSlice"></canvas></div>
-      <div class="pane side"><div class="ptitle" data-i18n="side">Вид сбоку</div><canvas id="cSide"></canvas></div>
+      <div class="pane side"><div class="ptitle" data-i18n="side">Вид сбоку</div>
+        <div class="sidemode"><button data-m="rocker" class="on" data-i18n="rockerMode">Рокер</button><button id="thickBtn" data-m="thick" data-i18n="thickMode">Толщина</button></div>
+        <canvas id="cSide"></canvas></div>
     </div>
     <div class="view3d only-3d">
       <div id="v3d"></div>
@@ -45,6 +50,12 @@
       </div>
     </div>
     <aside class="side-panel">
+      <div id="selBox" class="selbox" hidden>
+        <div id="selTitle" class="seltitle"></div>
+        <div class="selrow"><label><span id="selUl">X</span><input id="selU" inputmode="decimal"></label>
+          <label><span id="selVl">Y</span><input id="selV" inputmode="decimal"></label><span class="unit" data-i18n="mm">мм</span></div>
+        <div class="selhint" data-i18n="editHint"></div>
+      </div>
       <h3 data-i18n="dims">Размеры</h3>
       <div id="dims"></div>
       <h3 data-i18n="slices">Сечения</h3>
@@ -69,6 +80,7 @@
 <script src="js/model.js"></script>
 <script src="js/views2d.js"></script>
 <script src="js/view3d.js"></script>
+<script src="js/edit.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

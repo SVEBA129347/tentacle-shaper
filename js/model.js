@@ -156,8 +156,26 @@
     var minZ = Infinity, zeroX = 0;
     sb.forEach(function (p) { if (p[2] < minZ) { minZ = p[2]; zeroX = p[0]; } });
 
+    // толщина по нормали к низу (так считает Shape3D в Master Scale; сверено ±0.04 мм)
+    var dk = b.strdeck.sample(1500);
+    function perpThick(x) {
+      var e = 0.02, x0 = Math.max(0, x - e), x1 = Math.min(self.L, x + e);
+      var px = x, pz = self.zb(x), tx = x1 - x0, tz = self.zb(x1) - self.zb(x0), tl = Math.hypot(tx, tz);
+      tx /= tl; tz /= tl;
+      var best = Infinity, prev = null;
+      for (var i = 0; i < dk.length; i++) {
+        var f = (dk[i][0] - px) * tx + (dk[i][2] - pz) * tz;
+        if (prev !== null && (prev.f <= 0) !== (f <= 0)) {
+          var t = prev.f / (prev.f - f), qx = prev.p[0] + (dk[i][0] - prev.p[0]) * t, qz = prev.p[2] + (dk[i][2] - prev.p[2]) * t;
+          var d = Math.hypot(qx - px, qz - pz); if (d < best) best = d;
+        }
+        prev = { f: f, p: dk[i] };
+      }
+      if (!isFinite(best)) for (var j = 0; j < dk.length; j++) best = Math.min(best, Math.hypot(dk[j][0] - px, dk[j][2] - pz));
+      return best;
+    }
     function row(x) {
-      return { width: 20 * self.halfW(x), thick: 10 * (self.zd(x) - self.zb(x)), rocker: 10 * (self.zb(x) - minZ) };
+      return { width: 20 * self.halfW(x), thick: 10 * perpThick(x), rocker: 10 * (self.zb(x) - minZ) };
     }
     var stations = [0, 50, 100, 200, 305, 500];
     var tail = stations.map(function (d) { return Object.assign({ d: d }, row(xAtArc(Math.min(d / 10, S)))); });

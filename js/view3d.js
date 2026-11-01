@@ -37,7 +37,7 @@
     }
   };
 
-  View3D.prototype.setModel = function (model) {
+  View3D.prototype.setModel = function (model, keepView) {
     while (this.group.children.length) {
       var o = this.group.children.pop();
       if (o.geometry) o.geometry.dispose();
@@ -93,7 +93,7 @@
 
     g.computeBoundingBox();
     this.box = g.boundingBox;
-    this.resetView();
+    if (!keepView) this.resetView();
   };
 
   View3D.prototype.setWire = function (on) { this.wireOn = on; if (this.wire) this.wire.visible = on; };

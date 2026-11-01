@@ -14,10 +14,17 @@
       volFile: 'в файле (Shape3D)', volOur: 'наш расчёт',
       slices: 'Сечения', sliceAt: 'Сечение на', fromTailShort: 'от хвоста',
       wire: 'Сетка', reset: 'Сбросить вид', vexag: 'по высоте ×',
-      hint2d: 'Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — весь вид. Щелчок сверху или сбоку — сечение в этом месте.',
+      hint2d: 'Тяните оранжевые точки — доска меняется. Колесо — масштаб, перетаскивание фона — сдвиг, двойной щелчок — весь вид, щелчок — сечение здесь.',
       hint3d: 'Левая кнопка — вращать, правая — сдвиг, колесо — масштаб.',
       mm: 'мм', l: 'л', err: 'Не удалось открыть файл', points: 'Точки сечения',
-      stage: 'Этап 1: просмотр доски. Правка и CNC — следующие этапы.'
+      stage: 'Этап 1: просмотр и правка доски. CNC — следующий этап.',
+      save: 'Сохранить .s3dx', saveTip: 'Сохранить .s3dx (Ctrl+S)', undo: 'Отменить (Ctrl+Z)', redo: 'Вернуть (Ctrl+Shift+Z)',
+      rockerMode: 'Рокер', thickMode: 'Толщина', outline: 'Контур', rockerCurve: 'Рокер (низ стрингера)',
+      thickCurve: 'Толщина', point: 'точка', tangent: 'касательная', sliceEdit: 'правка сечения',
+      sliceHint: 'выберите сечение кнопкой справа, чтобы его править',
+      discard: 'Есть несохранённые изменения. Открыть другой файл без сохранения?',
+      deckFit: 'Верх стрингера приближён кривой Безье с точностью',
+      editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Alt при перетаскивании касательной — излом. Esc — снять выбор.'
     },
     en: {
       open: 'Open .s3dx', design: 'Design', view3d: '3D',
@@ -31,10 +38,17 @@
       volFile: 'in file (Shape3D)', volOur: 'our calculation',
       slices: 'Slices', sliceAt: 'Slice at', fromTailShort: 'from tail',
       wire: 'Wireframe', reset: 'Reset view', vexag: 'vertical ×',
-      hint2d: 'Wheel — zoom, drag — pan, double click — fit. Click in top or side view to cut a slice there.',
+      hint2d: 'Drag the orange points to reshape. Wheel — zoom, drag background — pan, double click — fit, click — slice here.',
       hint3d: 'Left button — rotate, right — pan, wheel — zoom.',
       mm: 'mm', l: 'L', err: 'Cannot open file', points: 'Slice points',
-      stage: 'Stage 1: board viewer. Editing and CNC come next.'
+      stage: 'Stage 1: board viewer and editor. CNC comes next.',
+      save: 'Save .s3dx', saveTip: 'Save .s3dx (Ctrl+S)', undo: 'Undo (Ctrl+Z)', redo: 'Redo (Ctrl+Shift+Z)',
+      rockerMode: 'Rocker', thickMode: 'Thickness', outline: 'Outline', rockerCurve: 'Rocker (stringer bottom)',
+      thickCurve: 'Thickness', point: 'point', tangent: 'tangent', sliceEdit: 'editing slice',
+      sliceHint: 'pick a slice with the buttons on the right to edit it',
+      discard: 'There are unsaved changes. Open another file without saving?',
+      deckFit: 'Stringer top approximated by a Bezier curve within',
+      editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Alt while dragging a tangent — break it. Esc — deselect.'
     }
   };
   var lang = 'ru';

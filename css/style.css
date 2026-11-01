@@ -23,7 +23,24 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
 .tab { border: 0; background: transparent; padding: 5px 12px; }
 .tab.on { background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .spacer { flex: 1; }
-.msg { color: #c92a2a; }
+.msg { color: #b35c00; }
+.needs-board { display: none; }
+body.loaded .needs-board { display: inline-block; }
+button.icon { padding: 4px 9px; font-size: 15px; line-height: 1; }
+body.dirty #saveBtn { background: #fff4e6; border-color: #f08c00; }
+.sidemode { position: absolute; right: 8px; top: 6px; z-index: 2; display: flex; }
+.sidemode button { padding: 2px 8px; font-size: 11px; border-radius: 0; background: rgba(255,255,255,.9); }
+.sidemode button:first-child { border-radius: 5px 0 0 5px; }
+.sidemode button:last-child { border-radius: 0 5px 5px 0; border-left: 0; }
+.sidemode button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.sidemode button:disabled { opacity: .4; cursor: default; }
+.selbox { border: 1px solid #f3c6d8; background: #fff5f9; border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
+.seltitle { font-weight: 600; margin-bottom: 6px; }
+.selrow { display: flex; gap: 8px; align-items: center; }
+.selrow label { display: flex; align-items: center; gap: 4px; }
+.selrow input { width: 78px; font: inherit; padding: 3px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
+.selrow .unit { color: var(--muted); }
+.selhint { color: var(--muted); font-size: 11px; margin-top: 6px; }
 .lang { display: flex; }
 .lang button { border-radius: 0; padding: 4px 8px; }
 .lang button:first-child { border-radius: 6px 0 0 6px; }
