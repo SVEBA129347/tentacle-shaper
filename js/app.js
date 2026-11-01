@@ -178,6 +178,7 @@
     st.model = new TS.Model(st.board); st.ms = null; st.vol = null;
     buildGeo(); redraw2d(); renderDims(); showSel(); markDirty();
     v3.setModel(st.model, true);
+    TS.cncUI.onBoard(true);
     var fe = st.ed.deckFitErr || 0;
     $('msg').textContent = fe > 0.5 ? TS.t('deckFit') + ' ' + fmt(fe, 1) + ' ' + TS.t('mm') : '';
   }
@@ -299,6 +300,7 @@
       setSecX(st.model.sliceX[2] !== undefined ? st.model.sliceX[2] : st.model.L / 2);
       renderDims(); showSel(); markDirty();
       v3.setModel(st.model);
+      TS.cncUI.onBoard(false);
       $('msg').textContent = '';
     } catch (e) {
       console.error(e);
@@ -340,6 +342,7 @@
     for (var i = 0; i < b.length; i++) b[i].classList.toggle('on', b[i].getAttribute('data-tab') === t);
     if (t === 'design') { vTop.fitted = vSide.fitted = vSlice.fitted = false; if (st.model) redraw2d(); }
     if (t === '3d' && st.model && !st.viewed3d) { st.viewed3d = true; v3.resetView(); }
+    if (t === 'cnc' && st.model) TS.cncUI.show();
   }
 
   function init() {
@@ -373,6 +376,7 @@
     });
     v3 = new TS.View3D($('v3d'));
     TS.views = { top: vTop, side: vSide, slice: vSlice };
+    TS.cncUI.init();
 
     $('file').addEventListener('change', function (e) { openFile(e.target.files[0]); e.target.value = ''; });
     $('openBtn').addEventListener('click', function () { $('file').click(); });
@@ -397,6 +401,7 @@
     for (var j = 0; j < lb.length; j++) lb[j].addEventListener('click', function (e) {
       TS.setLang(e.currentTarget.getAttribute('data-l')); markLang();
       if (st.model) { renderDims(); setSecX(st.secX); showSel(); }
+      TS.cncUI.lang();
     });
     markLang();
 

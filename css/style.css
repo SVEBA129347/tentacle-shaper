@@ -71,8 +71,24 @@ body.loaded .work { display: grid; }
 .tools3d { position: absolute; left: 12px; top: 12px; display: flex; gap: 10px; align-items: center;
   background: rgba(255,255,255,.9); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); }
 .tools3d .hint { color: var(--muted); }
-body[data-tab="3d"] .design-only { display: none; }
-body[data-tab="design"] .only-3d { display: none; }
+body:not([data-tab="design"]) .design-only { display: none; }
+body:not([data-tab="3d"]) .only-3d { display: none; }
+body:not([data-tab="cnc"]) .only-cnc { display: none; }
+body[data-tab="cnc"] .not-cnc { display: none; }
+.cncviews { display: grid; grid-template-rows: 60fr 40fr; gap: 1px; background: var(--line); min-height: 0; }
+.cncviews .pane canvas { cursor: default; }
+.warn { background: #fff4e6; border: 1px solid #ffd8a8; color: #8a4b00; border-radius: 8px; padding: 8px 10px; font-size: 12px; margin-bottom: 10px; }
+.cncbtns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.cncbtns button:disabled { opacity: .45; cursor: default; }
+.cstat { font-size: 12px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+.cstat.muted { color: var(--muted); }
+.form { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.form label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.form label span { color: var(--ink); font-size: 12px; }
+.form input[type=number] { width: 90px; font: inherit; padding: 3px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
+.form label.chk { justify-content: flex-start; }
+.formbtns { display: flex; gap: 6px; margin-top: 4px; }
+.formbtns button { font-size: 12px; padding: 3px 8px; }
 
 .side-panel { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; padding: 12px 14px; }
 .side-panel h3 { margin: 14px 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }

@@ -18,6 +18,7 @@
   <nav class="tabs">
     <button class="tab on" data-tab="design" data-i18n="design">Проектирование</button>
     <button class="tab" data-tab="3d" data-i18n="view3d">3D</button>
+    <button class="tab" data-tab="cnc" data-i18n="cnc">CNC</button>
   </nav>
   <div class="spacer"></div>
   <span id="msg" class="msg"></span>
@@ -49,7 +50,21 @@
         <span class="hint" data-i18n="hint3d"></span>
       </div>
     </div>
+    <div class="cncviews only-cnc">
+      <div class="pane"><div class="ptitle" data-i18n="cTopView">Траектории, вид сверху (координаты станка)</div>
+        <div class="sidemode cncside"><button data-s="deck" class="on" data-i18n="cDeck">Дек</button><button data-s="bot" data-i18n="cBot">Дно</button></div>
+        <canvas id="cCncTop"></canvas></div>
+      <div class="pane"><div class="ptitle" data-i18n="cSideView">Доска в бланке, вид сбоку</div><canvas id="cCncSide"></canvas></div>
+    </div>
     <aside class="side-panel">
+      <div class="only-cnc">
+        <div class="warn" data-i18n="cWarn"></div>
+        <div class="cncbtns"><button id="cCalc" class="primary" data-i18n="cCalc">Рассчитать</button>
+          <button id="cSaveDeck" data-i18n="cSaveDeck" disabled>G-code дека</button><button id="cSaveBot" data-i18n="cSaveBot" disabled>G-code дна</button></div>
+        <div id="cncInfo"></div>
+        <div id="cncForm"></div>
+      </div>
+      <div class="not-cnc">
       <div id="selBox" class="selbox" hidden>
         <div id="selTitle" class="seltitle"></div>
         <div class="selrow"><label><span id="selUl">X</span><input id="selU" inputmode="decimal"></label>
@@ -61,6 +76,7 @@
       <h3 data-i18n="slices">Сечения</h3>
       <div id="sliceList" class="chips"></div>
       <div class="range"><input id="secRange" type="range" min="0" max="100" step="0.1" value="0"><span id="secVal"></span></div>
+      </div>
     </aside>
   </section>
 </main>
@@ -81,6 +97,8 @@
 <script src="js/views2d.js"></script>
 <script src="js/view3d.js"></script>
 <script src="js/edit.js"></script>
+<script src="js/cnc.js"></script>
+<script src="js/cncui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
