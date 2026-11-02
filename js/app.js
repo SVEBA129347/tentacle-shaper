@@ -1012,7 +1012,7 @@
     if (t === 'fin') TS.finUI.show();
     if (t === 'foil') TS.foilUI.show();
     // страницы, которыми делятся ссылкой: адрес …/#fin, …/#foil
-    try { history.replaceState(null, '', (t === 'fin' || t === 'foil') ? '#' + t : location.pathname + location.search); } catch (e) { /* file:// */ }
+    try { history.replaceState(null, '', (t === 'fin' || t === 'foil' || t === 'culture') ? '#' + t : location.pathname + location.search); } catch (e) { /* file:// */ }
   }
 
   function init() {
@@ -1063,7 +1063,7 @@
     TS.printUI.init();
     TS.hydroUI.init();
     TS.finUI.init();
-    TS.foilUI.init();
+    TS.foilUI.init(); TS.cultureUI.init();
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
@@ -1154,7 +1154,7 @@
     for (var j = 0; j < lb.length; j++) lb[j].addEventListener('click', function (e) {
       TS.setLang(e.currentTarget.getAttribute('data-l')); markLang();
       if (st.model) { renderDims(); setSecX(st.secX); showSel(); }
-      TS.cncUI.lang(); TS.hydroUI.lang(); TS.finUI.lang(); TS.foilUI.lang();
+      TS.cncUI.lang(); TS.hydroUI.lang(); TS.finUI.lang(); TS.foilUI.lang(); TS.cultureUI.lang();
     });
     markLang();
 
@@ -1212,7 +1212,7 @@
       if (st.ed && st.ed.dirty) { e.preventDefault(); e.returnValue = ''; }
     });
     window.addEventListener('resize', function () { if (st.model) { vTop.fitted = vSide.fitted = vSlice.fitted = false; redraw2d(); } });
-    setTab(location.hash === '#fin' ? 'fin' : location.hash === '#foil' ? 'foil' : 'design');
+    setTab(location.hash === '#fin' ? 'fin' : location.hash === '#foil' ? 'foil' : location.hash === '#culture' ? 'culture' : 'design');
   }
   function markLang() {
     var lb = document.querySelectorAll('.lang button');

@@ -291,3 +291,35 @@ body[data-tab="fin"] .empty, body[data-tab="fin"] .work, body[data-tab="foil"] .
 #dlgFins .fwtab { width: auto; }
 #dlgFins .volrow label.chk { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
 #dlgFins .volrow input[type=number] { width: 72px; }
+/* страница «Серф-культура» */
+body:not([data-tab="culture"]) .only-culture { display: none; }
+.cu-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+.cu-hero { display: flex; gap: 20px; align-items: center; margin-bottom: 22px; }
+.cu-hero h1 { font-size: 34px; margin: 0 0 8px; letter-spacing: -.3px; }
+.cu-kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+.cu-hero .lead { font-size: 16px; line-height: 1.5; margin: 0; max-width: 66ch; color: #333; }
+.cu-book { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: center; background: #000; color: #fff; border-radius: 14px; padding: 18px; margin-bottom: 28px; }
+.cu-book h2 { color: var(--brand); margin: 0 0 8px; font-size: 20px; }
+.cu-book p { line-height: 1.55; margin: 0; color: #e8e8e2; }
+.cu-photo { aspect-ratio: 4 / 3; border: 2px dashed #555; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; color: #999; font-size: 13px; overflow: hidden; }
+.cu-photo.has { border: 0; padding: 0; }
+.cu-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cu-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cu-head h2 { margin: 0; }
+.cu-wrap .small { font-size: 12px; color: var(--muted); line-height: 1.5; max-width: 90ch; }
+.cu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 14px; }
+.cu-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
+.cu-card.star { border: 2px solid var(--brand-line); box-shadow: 0 0 0 4px var(--brand-soft); }
+.cu-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.cu-kind { background: var(--brand); color: #000; border-radius: 99px; padding: 1px 9px; font-weight: 600; }
+.cu-card h3 { margin: 10px 0 2px; font-size: 18px; }
+.cu-by { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.cu-card p { line-height: 1.5; margin: 0 0 8px; font-size: 14px; }
+.cu-note { font-weight: 600; }
+.cu-img { width: 100%; border-radius: 8px; margin: 4px 0 8px; }
+.cu-links { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; align-items: center; }
+.cu-links a { color: #000; }
+.cu-from { color: var(--muted); font-size: 12px; }
+a.btnlink { display: inline-block; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); text-decoration: none; color: #000; font-size: 14px; }
+a.btnlink.primary { background: var(--brand); border-color: var(--brand-line); font-weight: 600; }
+@media (max-width: 760px) { .cu-book { grid-template-columns: 1fr; } .cu-hero { flex-direction: column; align-items: flex-start; } }
