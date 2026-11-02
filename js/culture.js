@@ -33,6 +33,16 @@
       links: [['Wikipedia', 'https://en.wikipedia.org/wiki/The_Endless_Summer']]
     },
     {
+      id: 'pointbreak', kind: 'film', years: '1991',
+      title: { ru: 'Point Break — «На гребне волны»', en: 'Point Break' },
+      by: { ru: 'Кэтрин Бигелоу (Kathryn Bigelow), США', en: 'Kathryn Bigelow, USA' },
+      text: {
+        ru: 'Культовый фильм про серф-настроение. Агент ФБР Джонни Юта (Киану Ривз) внедряется к серферам, которых подозревают в ограблениях банков, и попадает под обаяние их лидера Бодхи (Патрик Суэйзи) — человека, для которого волна важнее всего. Финал — «шторм, который бывает раз в 50 лет» на австралийском пляже Беллс-Бич. В 2015 году вышел ремейк, в России — под названием «Точка отрыва».',
+        en: 'A cult film about the surf spirit. FBI agent Johnny Utah (Keanu Reeves) goes undercover among surfers suspected of bank robberies and falls under the spell of their leader Bodhi (Patrick Swayze), a man for whom the wave matters more than anything. The finale is the "50-year storm" at Bells Beach, Australia. A remake came out in 2015.'
+      },
+      links: [['Wikipedia', 'https://en.wikipedia.org/wiki/Point_Break']]
+    },
+    {
       id: 'crystal', kind: 'film', years: '1973',
       title: { ru: 'Crystal Voyager', en: 'Crystal Voyager' },
       by: { ru: 'Дэвид Элфик (David Elfick), Джордж Гриноф (George Greenough), Австралия', en: 'David Elfick, George Greenough, Australia' },
