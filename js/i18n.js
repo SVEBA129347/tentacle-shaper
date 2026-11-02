@@ -47,6 +47,7 @@
       tSmooth: 'Плавная', tCorner: 'Излом', tAxis: 'Горизонт./верт.', delPt: 'Удалить точку', slAdd: '+ Сечение здесь', slDel: 'Удалить сечение', slX: 'X сечения',
       noPtSlice: 'В сечениях точки не добавляются: у всех сечений должно быть одинаковое число точек.',
       curvBtn: 'Кривизна', curvTip: 'Гребёнка кривизны правимых линий (K)', origBtn: 'Исходная', origTip: 'Форма на момент открытия/сохранения — голубым (O)',
+      barsTitle: 'Мерные линейки', barAdd: '+ Линейка', follow: 'Сечение за мышкой (X)', trArc: 'по стрингеру', trThickV: 'толщина (верт.)',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
       editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Двойной щелчок по линии — новая точка, Del — удалить точку. Esc — снять выбор.'
     },
@@ -95,6 +96,7 @@
       tSmooth: 'Smooth', tCorner: 'Corner', tAxis: 'Horiz./vert.', delPt: 'Delete point', slAdd: '+ Slice here', slDel: 'Delete slice', slX: 'Slice X',
       noPtSlice: 'Points are not added to slices: all slices must have the same number of points.',
       curvBtn: 'Curvature', curvTip: 'Curvature comb of edited curves (K)', origBtn: 'Original', origTip: 'Shape at open/save time in light blue (O)',
+      barsTitle: 'Measurement bars', barAdd: '+ Bar', follow: 'Slice follows mouse (X)', trArc: 'along stringer', trThickV: 'thickness (vert.)',
       deckFit: 'Stringer top approximated by a Bezier curve within',
       editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Double click on a curve adds a point, Del deletes it. Esc — deselect.'
     }

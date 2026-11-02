@@ -82,6 +82,12 @@
       <h3 data-i18n="slices">Сечения</h3>
       <div id="sliceList" class="chips"></div>
       <div class="range"><input id="secRange" type="range" min="0" max="100" step="0.1" value="0"><span id="secVal"></span></div>
+      <h3 data-i18n="barsTitle">Мерные линейки</h3>
+      <div class="slbtns"><input id="barD" type="number" step="10" value="300"> <span data-i18n="mm">мм</span>
+        <select id="barFrom"><option value="tail" data-i18n="fromTail">от хвоста</option><option value="nose" data-i18n="fromNose">от носа</option></select>
+        <button id="barAdd" data-i18n="barAdd">+ Линейка</button></div>
+      <div id="barList" class="chips"></div>
+      <label class="chk follow"><input id="followChk" type="checkbox"> <span data-i18n="follow">Сечение за мышкой (X)</span></label>
       <div class="slbtns"><button id="slAdd" data-i18n="slAdd">+ Сечение здесь</button><button id="slDel" class="danger" data-i18n="slDel">Удалить сечение</button>
         <label id="slMoveL"><span data-i18n="slX">X сечения</span> <input id="slX" type="number" step="1"> <span data-i18n="mm">мм</span></label></div>
       </div>

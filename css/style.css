@@ -159,6 +159,8 @@ body.no-rm .rm { display: none; }
 .ptypes button { font-size: 11px; padding: 2px 7px; }
 .ptypes button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 button.danger { color: #c92a2a; }
+.follow { display: block; margin-top: 8px; font-size: 12px; }
+.chip.bar { border-color: #b2c7d9; color: #1d2b36; }
 .slbtns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
 .slbtns button { font-size: 12px; padding: 3px 8px; }
 .slbtns input { width: 80px; font: inherit; padding: 2px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
@@ -171,3 +173,4 @@ button.toggle.on { background: #e7f1fb; border-color: #74a9d8; }
 .bar .msg { font-size: 11px; max-width: 240px; line-height: 1.2; }
 @media (max-width: 1520px) { .brand { font-size: 0; gap: 0; } }
 .bar .msg { max-width: 200px; overflow: hidden; }
+body.loaded .status .hint { display: none; }

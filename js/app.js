@@ -112,6 +112,38 @@
     v.poly(h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; })), { stroke: REF, width: 1.2, dash: [5, 3] }, true);
   }
 
+  // ---------- измерения под мышкой и мерные линейки ----------
+  function rmMs() { return st.rmMs || (st.rmMs = st.model.measures(RM)); }
+  function trace(xmm) {
+    if (!st.model) return;
+    var m = st.model, x = Math.max(0, Math.min(m.L, xmm / 10)), ms = rmMs();
+    $('coords').textContent = 'X ' + fmt(x * 10) + ' (' + TS.t('trArc') + ' ' + fmt(ms.arcAtX(x)) + ') · ' +
+      TS.t('width') + ' ' + fmt(20 * m.halfW(x)) + ' · ' + TS.t('rocker') + ' ' + fmt(10 * (m.zb(x) - ms.minZ)) + ' · ' +
+      TS.t('trThickV') + ' ' + fmt(10 * (m.zd(x) - m.zb(x))) + ' ' + TS.t('mm');
+    if (st.follow) setSecX(x);
+  }
+  st.bars = [];
+  function barX(b) { var ms = rmMs(), S = ms.arcAtX(st.model.L); return ms.xAtArc(b.from === 'nose' ? Math.max(0, S - b.d) : Math.min(S, b.d)); }
+  function drawBars(v, view) {
+    if (!st.model || !st.bars.length) return;
+    var m = st.model, ms = rmMs(), ctx = v.ctx;
+    st.bars.forEach(function (b) {
+      var x = barX(b), X = x * 10, lab;
+      if (view === 'top') { var w = m.halfW(x) * 10; v.poly([[X, -w - 10], [X, w + 10]], { stroke: '#495057', width: 1, dash: [3, 3] }); lab = fmt(2 * w); v.label(X, -w - 10, lab, '#1d2b36', 'center', 14); }
+      else if (st.sideMode !== 'thick') {
+        var zb = m.zb(x) * 10, zd = m.zd(x) * 10;
+        v.poly([[X, zb - 6], [X, zd + 6]], { stroke: '#495057', width: 1, dash: [3, 3] });
+        v.label(X, zd + 6, fmt(zd - ms.minZ * 10) + ' / ' + fmt(zd - zb), '#1d2b36', 'center', -4);
+        v.label(X, zb - 6, fmt(zb - ms.minZ * 10), '#1d2b36', 'center', 14);
+      }
+    });
+  }
+  function renderBars() {
+    $('barList').innerHTML = st.bars.map(function (b, i) {
+      return '<button class="chip bar" data-i="' + i + '">' + b.d + ' ' + TS.t(b.from === 'nose' ? 'fromNose' : 'fromTail') + ' ×</button>';
+    }).join('');
+  }
+
   // ---------- вид сверху ----------
   function drawTop(ctx, v) {
     var g = st.geo; v.grid(); if (!g) return;
@@ -129,7 +161,7 @@
     });
     var cx = st.secX * 10, cw = st.model.halfW(st.secX) * 10;
     v.poly([[cx, -cw - 15], [cx, cw + 15]], { stroke: C.cur, width: 2 });
-    refTop(v);
+    drawBars(v, 'top'); refTop(v);
     comb(v, st.board.otl, 0, 1, 1); comb(v, st.board.otl, 0, 1, -1);
     drawHandles(v, 'otl', 1);
   }
@@ -154,7 +186,7 @@
       });
       var cx = st.secX * 10;
       v.poly([[cx, st.model.zb(st.secX) * 10 - 8], [cx, st.model.zd(st.secX) * 10 + 8]], { stroke: C.cur, width: 2 });
-      refSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
+      drawBars(v, 'side'); refSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
       drawHandles(v, 'bot', 1);
       drawHandles(v, 'deck', 1);
     }
@@ -500,7 +532,7 @@
     var status = function (x, y) { $('coords').textContent = 'X ' + fmt(x) + '  ' + (this || 'Y') + ' ' + fmt(y); };
     vTop = new TS.View2D($('cTop'), {
       bounds: function () { var g = st.geo; return g && [0, -g.maxY, g.L, g.maxY]; },
-      draw: drawTop, onClick: function (x) { setSecX(x / 10); }, onMove: status.bind('Y'),
+      draw: drawTop, onClick: function (x) { setSecX(x / 10); }, onMove: function (x) { trace(x); },
       onDown: onDown, onDrag: onDrag, onUp: onUp, onDbl: onDbl
     });
     vSide = new TS.View2D($('cSide'), {
@@ -511,7 +543,7 @@
       draw: drawSide, onClick: function (x) { if (st.sideMode !== 'thick') setSecX(x / 10); },
       onMove: function (x, y) {
         var t = st.sideMode === 'thick';
-        $('coords').textContent = (t ? 'S ' : 'X ') + fmt(x) + '  ' + (t ? 'T ' : 'Z ') + fmt(y);
+        if (t) $('coords').textContent = 'S ' + fmt(x) + '  T ' + fmt(y); else trace(x);
       },
       onDown: onDown, onDrag: onDrag, onUp: onUp, onDbl: onDbl
     });
@@ -532,6 +564,15 @@
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
     st.showOrig = true;
+    $('barAdd').addEventListener('click', function () {
+      var d = parseFloat($('barD').value); if (!isFinite(d) || !st.model) return;
+      st.bars.push({ d: d, from: $('barFrom').value }); renderBars(); redraw2d();
+    });
+    $('barList').addEventListener('click', function (e) {
+      var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
+      st.bars.splice(+i, 1); renderBars(); redraw2d();
+    });
+    $('followChk').addEventListener('change', function (e) { st.follow = e.target.checked; });
     $('curvBtn').addEventListener('click', function () { st.showCurv = !st.showCurv; $('curvBtn').classList.toggle('on', st.showCurv); if (st.model) redraw2d(); });
     $('origBtn').addEventListener('click', function () { st.showOrig = !st.showOrig; $('origBtn').classList.toggle('on', st.showOrig); if (st.model) redraw2d(); });
     $('slAdd').addEventListener('click', function () {
@@ -589,6 +630,7 @@
       if (k === 'Escape') { st.ed.sel = null; showSel(); redraw2d(); return; }
       if ((k === 'Delete' || k === 'Backspace') && st.ed.sel) { e.preventDefault(); delSelected(); return; }
       if (!mod && (k === 'k' || k === 'K' || k === 'л' || k === 'Л')) { $('curvBtn').click(); return; }
+      if (!mod && (k === 'x' || k === 'X' || k === 'ч' || k === 'Ч')) { $('followChk').checked = !$('followChk').checked; st.follow = $('followChk').checked; return; }
       if (!mod && (k === 'o' || k === 'O' || k === 'щ' || k === 'Щ')) { $('origBtn').click(); return; }
       var step = (e.shiftKey ? 1 : 0.1) / 10, d = null;   // 0.1 мм, с Shift — 1 мм
       if (k === 'ArrowLeft') d = [-step, 0]; else if (k === 'ArrowRight') d = [step, 0];
