@@ -503,13 +503,17 @@
 
   // ---------- сечение ----------
   function drawSlice(ctx, v) {
-    v.grid(); if (!st.model) return;
+    v.dz = 0; v.grid(); if (!st.model) return;
     var m = st.model, x = st.secX, k = sliceIndexAtCursor();
     var h = m.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
     var full = h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; }));
     v.poly(full, { fill: C.fill, stroke: C.line, width: 1.8 }, true);
     refSlice(v); ghostSlice(v); drawBoxesSlice(v);
-    if (k >= 0) { comb(v, st.board.slices[k], 1, 2, 1); drawHandles(v, 'slice:' + k, 1); drawErrors(v, 'slice'); drawArc(v, 'slice'); }
+    if (k >= 0) {
+      // точки сечения из файла — на высоту сечения доски
+      var sk = st.board.slices[k], dz = (m.sectionCtrl(sk.P[0][0]).P[0][1] - sk.P[0][2]) * 10;
+      v.dz = Math.abs(dz) > 0.01 ? dz : 0;
+      comb(v, sk, 1, 2, 1); drawHandles(v, 'slice:' + k, 1); drawErrors(v, 'slice'); drawArc(v, 'slice'); }
     else {
       var c = m.sectionCtrl(x);
       for (var i = 0; i < m.nPts; i++) v.dot(c.P[i][0] * 10, c.P[i][1] * 10, 3, i === m.apexIdx ? C.apex : '#868e96', true);

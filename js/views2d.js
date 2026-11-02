@@ -57,8 +57,10 @@
     });
   }
 
-  View2D.prototype.toScreen = function (x, y) { return [this.ox + x * this.s, this.oy - y * this.s * this.exag]; };
-  View2D.prototype.toWorld = function (sx, sy) { return [(sx - this.ox) / this.s, (this.oy - sy) / (this.s * this.exag)]; };
+  // dz — сдвиг по высоте (мм) для кривых, записанных в файле не на своей высоте
+  // (в Short Томаса сечения лежат низом на Z = 0, а не на рокере)
+  View2D.prototype.toScreen = function (x, y) { return [this.ox + x * this.s, this.oy - (y + (this.dz || 0)) * this.s * this.exag]; };
+  View2D.prototype.toWorld = function (sx, sy) { return [(sx - this.ox) / this.s, (this.oy - sy) / (this.s * this.exag) - (this.dz || 0)]; };
 
   View2D.prototype.size = function () {
     var r = this.c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
