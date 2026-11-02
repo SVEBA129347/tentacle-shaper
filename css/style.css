@@ -23,8 +23,7 @@ button.primary { border-color: var(--brand-line); }
 .topbar { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: var(--deep); color: var(--foam);
   flex: none; flex-wrap: wrap; position: relative; z-index: 20; }
 .brand { display: flex; align-items: center; gap: 9px; color: inherit; text-decoration: none; margin-right: 10px; white-space: nowrap; }
-.brand .badge { height: 36px; width: auto; display: block; }
-.brand .wordmark-img { height: 34px; width: auto; display: block; }
+.brand .badge { height: 40px; width: auto; display: block; margin: -3px 0; }
 .topbar button { background: transparent; color: var(--foam); border-color: transparent; white-space: nowrap; padding: 6px 10px; }
 .topbar button:hover { background: rgba(255,255,255,.08); border-color: transparent; }
 .topbar button.primary { background: var(--brand); color: #000; }
@@ -226,5 +225,4 @@ body.loaded .status .hint { display: none; }
 .simrow { display: flex; gap: 6px; align-items: center; }
 .simrow input[type=range] { flex: 1; }
 #cSimInfo { font-size: 11px; margin-top: 4px; }
-@media (max-width: 1180px) { .brand .wordmark-img { display: none; } }
 button.toggle.on { background: var(--brand-soft); border-color: var(--brand-line); }
