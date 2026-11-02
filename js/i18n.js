@@ -4,7 +4,7 @@
   var D = {
     ru: {
       open: 'Открыть .s3dx', design: 'Проектирование', view3d: '3D',
-      drop: 'Перетащите файл доски .s3dx сюда или нажмите «Открыть .s3dx».',
+      drop: 'Или перетащите сюда свой файл .s3dx, или нажмите «Открыть .s3dx».',
       dropNote: 'Файл открывается только у вас в браузере и никуда не отправляется.',
       top: 'Вид сверху', side: 'Вид сбоку', slice: 'Сечение',
       dims: 'Размеры', length: 'Длина', width: 'Ширина', thick: 'Толщина', volume: 'Объём',
@@ -62,7 +62,7 @@
       cStartNose: 'Первая линия — от носа', cStartTail: 'Первая линия — от хвоста', cEndPos: 'в конце',
       cSimLine: 'проход', cK_line: 'линия', cK_rough: 'черновая', cK_stringer: 'стрингер', cK_endcut: 'торец', cK_plug: 'пробка', cK_move: 'переезд', cSimSpeedT: 'Скорость симуляции (во сколько раз быстрее станка)', cSheet: 'Лист станка', cSheetT: 'лист станка',
       cSheetSide: 'доска в бланке, вид сбоку, по высоте ×3', cFeedU: 'мм/мин', cGaps: 'Запас в бланке снизу / сверху', cPcs: 'шт.',
-      hydro: 'Вода', hyWarn: 'Оценка по методу Савицкого для глиссирующих корпусов (катера): точность порядка ±15–20 %. Хорошо подходит для сравнения досок между собой («Доска → Сравнить…» рисует вторую доску зелёным). Серым — где метод выходит за свою область.',
+      newBoard: 'Новая доска', newBoardT: 'Открыть готовую доску: классический серф 6′0″ (1830 × 495 × 62 мм)', newBoardHero: 'Начать с классической доски 6′0″', hydro: 'Вода', hyWarn: 'Оценка по методу Савицкого для глиссирующих корпусов (катера): точность порядка ±15–20 %. Хорошо подходит для сравнения досок между собой («Доска → Сравнить…» рисует вторую доску зелёным). Серым — где метод выходит за свою область.',
       hyRider: 'Райдер и скорость', hyMass: 'Вес райдера, кг', hyBoardM: 'Вес доски, кг', hyCg: 'Центр тяжести от хвоста, % длины', hyKmh: 'Скорость для таблицы, км/ч',
       hyFins: 'Плавники', hyFinN: 'Сколько плавников', hyFinA: 'Площадь одного, см²', hyFinD: 'Глубина, мм', hyFinTc: 'Толщина профиля, % хорды',
       hyPump: 'Насос в плавнике (Вентури)', hyPumpOn: 'Насос стоит в плавнике', hyD1: 'Вход, мм', hyD2: 'Горло, мм', hyD3: 'Выход, мм', hyDepth: 'Глубина горла под водой, мм',
@@ -95,7 +95,7 @@
     },
     en: {
       open: 'Open .s3dx', design: 'Design', view3d: '3D',
-      drop: 'Drop a .s3dx board file here or press “Open .s3dx”.',
+      drop: 'Or drop your own .s3dx file here, or press “Open .s3dx”.',
       dropNote: 'The file is opened only in your browser and is not uploaded anywhere.',
       top: 'Top view', side: 'Side view', slice: 'Slice',
       dims: 'Dimensions', length: 'Length', width: 'Width', thick: 'Thickness', volume: 'Volume',
@@ -153,7 +153,7 @@
       cStartNose: 'First line from the nose', cStartTail: 'First line from the tail', cEndPos: 'end at',
       cSimLine: 'pass', cK_line: 'line', cK_rough: 'roughing', cK_stringer: 'stringer', cK_endcut: 'end cut', cK_plug: 'plug', cK_move: 'move', cSimSpeedT: 'Simulation speed (times faster than the machine)', cSheet: 'Machine sheet', cSheetT: 'machine sheet',
       cSheetSide: 'board in the blank, side view, vertical ×3', cFeedU: 'mm/min', cGaps: 'Blank margin below / above', cPcs: 'pcs',
-      hydro: 'Water', hyWarn: 'Estimate by the Savitsky method for planing hulls (boats): accuracy about ±15–20 %. Good for comparing boards (“Board → Compare…” draws the other board in green). Grey — outside the method range.',
+      newBoard: 'New board', newBoardT: 'Open a ready board: classic surf 6′0″ (1830 × 495 × 62 mm)', newBoardHero: 'Start with a classic 6′0″ board', hydro: 'Water', hyWarn: 'Estimate by the Savitsky method for planing hulls (boats): accuracy about ±15–20 %. Good for comparing boards (“Board → Compare…” draws the other board in green). Grey — outside the method range.',
       hyRider: 'Rider and speed', hyMass: 'Rider mass, kg', hyBoardM: 'Board mass, kg', hyCg: 'Center of gravity from tail, % length', hyKmh: 'Speed for the table, km/h',
       hyFins: 'Fins', hyFinN: 'Number of fins', hyFinA: 'Area of one, cm²', hyFinD: 'Depth, mm', hyFinTc: 'Foil thickness, % chord',
       hyPump: 'Pump in the fin (Venturi)', hyPumpOn: 'Pump fitted in the fin', hyD1: 'Inlet, mm', hyD2: 'Throat, mm', hyD3: 'Outlet, mm', hyDepth: 'Throat depth under water, mm',

@@ -230,3 +230,5 @@ body.loaded .status .hint { display: none; }
 .simrow input[type=range] { flex: 1; }
 #cSimInfo { font-size: 11px; margin-top: 4px; }
 button.toggle.on { background: var(--brand-soft); border-color: var(--brand-line); }
+.herobtns { margin: 4px 0 14px; }
+button.big { font-size: 15px; padding: 9px 18px; border-radius: 9px; }

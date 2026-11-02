@@ -17,6 +17,7 @@
     <img class="badge" src="img/badge.svg" alt="Tentacle Surf" width="34" height="40">
   </a>
   <button id="openBtn" class="primary" data-i18n="open">Открыть .s3dx</button>
+  <button id="newBtn" data-i18n="newBoard" data-i18n-title="newBoardT">Новая доска</button>
   <input id="file" type="file" accept=".s3dx" hidden>
   <button id="saveBtn" class="needs-board" data-i18n="save" data-i18n-title="saveTip">Сохранить .s3dx</button>
   <span class="group needs-board"><button id="undoBtn" class="icon" data-i18n-title="undo">↶</button><button id="redoBtn" class="icon" data-i18n-title="redo">↷</button></span>
@@ -54,6 +55,7 @@
   <section class="empty">
     <div class="dropbox">
       <div class="hero"><img src="img/badge.svg" alt="Tentacle Surf" height="200"></div>
+      <div class="herobtns"><button class="primary big" data-i18n="newBoardHero" onclick="TS.newBoard()">Начать с классической доски</button></div>
       <p data-i18n="drop">Перетащите файл доски .s3dx сюда или нажмите «Открыть .s3dx».</p>
       <p class="note" data-i18n="dropNote">Файл открывается только у вас в браузере и никуда не отправляется.</p>
     </div>
