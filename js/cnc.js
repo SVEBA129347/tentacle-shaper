@@ -36,7 +36,8 @@
       roughLoops: 3, roughLoopStep: 18,
       bridges: or(num(M, 'NbPlotsMaintient'), 2) > 0, bridgeL: or(num(M, 'LargeurPlotsMaintient') * 10, 50),
       bridgeH: or(num(M, 'HauteurPlotsMaintient') * 10, 15),
-      endCut: or(num(M, 'CutStringerTailDeck'), 1) > 0, xMin: 4, plugs: true
+      endCut: or(num(M, 'CutStringerTailDeck'), 1) > 0, xMin: 4, plugs: true,
+      startNose: false, mTail: 0, mNose: 0, endX: 0, endY: 0, endZ: 0
     };
     if (s.Yc <= 0) s.Yc = 600;
     // наклон по умолчанию: концы дека на одной высоте (как ставит Shape3D, ±0.03°)
@@ -195,8 +196,11 @@
       if (rp !== a && s.nRail > 1) ranges.push({ i0: rp, i1: a, u: fractions(steps(s.nRail - 1, 1, 0)) });
     }
     // станции вдоль доски: гуще у концов
+    // отступы от концов (мм): линии и стрингер не доходят до хвоста/носа — если доска длиннее станка
     var L = model.L, N = Math.max(10, s.nPts), xs = [];
-    for (var i = 0; i < N; i++) xs.push(L * (0.5 - 0.5 * Math.cos(Math.PI * i / (N - 1))));
+    var xA = Math.max(0, (s.mTail || 0) / 10), xB = Math.min(L, L - (s.mNose || 0) / 10);
+    if (xB - xA < L * 0.2) { xA = 0; xB = L; }
+    for (var i = 0; i < N; i++) xs.push(xA + (xB - xA) * (0.5 - 0.5 * Math.cos(Math.PI * i / (N - 1))));
     var hx = L * 0.002;
 
     // точка касания и нормаль на линии u (часть сечения r) в сечении x — координаты доски, мм
@@ -255,7 +259,7 @@
       ranges.forEach(function (r) {
         r.u.forEach(function (u) {
           var pts = lineTool(r, u, sign);
-          if (k % 2 === 1) pts.reverse();
+          if ((k % 2 === 1) !== !!s.startNose) pts.reverse();      // «змейкой»; первая линия — от хвоста или от носа
           passes.push({ kind: 'line', pts: pts });
           k++;
         });
@@ -263,8 +267,8 @@
     });
     if (s.stringer) {
       var sp = [];
-      for (var q = 0; q <= 400; q++) { var X = fr.p(L * 10 * q / 400, 0, 0)[0]; sp.push([X, s.Yc, cloud.drop(X, s.Yc, cut)]); }
-      if (passes.length % 2 === 1) sp.reverse();
+      for (var q = 0; q <= 400; q++) { var X = fr.p((xA + (xB - xA) * q / 400) * 10, 0, 0)[0]; sp.push([X, s.Yc, cloud.drop(X, s.Yc, cut)]); }
+      if ((passes.length % 2 === 1) !== !!s.startNose) sp.reverse();
       passes.push({ kind: 'stringer', pts: sp });
     }
     // ---------- подрезка торца стрингера у хвоста (только дек) ----------
@@ -471,8 +475,25 @@
       last = p.pts[p.pts.length - 1];
     });
     if (last) out.push('X' + f4(last[0]) + ' Y' + f4(last[1]) + ' Z' + f4(safe));
-    out.push('M5'); out.push('X0.0000 Y0.0000 Z0.0000'); out.push('M2');
+    out.push('M5'); out.push('X' + f4(s.endX || 0) + ' Y' + f4(s.endY || 0) + ' Z' + f4(s.endZ || 0)); out.push('M2');
     return out.join('\r\n') + '\r\n';
+  };
+
+  // весь путь фрезы как в G-code (с переездами над бланком): [[X,Y,Z,kind]] — для симуляции
+  TS.cncPath = function (res, s) {
+    var safe = s.Tb + s.safeZ, out = [], last = null;
+    res.passes.forEach(function (p, k) {
+      var a = p.pts[0];
+      if (!last || !p.direct) {
+        if (last) out.push([last[0], last[1], safe, 'move', k]);
+        else out.push([a[0], a[1], safe, 'move', k]);
+        out.push([a[0], a[1], safe, 'move', k]);
+      }
+      p.pts.forEach(function (q) { out.push([q[0], q[1], q[2], p.kind, k + 1]); });
+      last = p.pts[p.pts.length - 1];
+    });
+    if (last) out.push([last[0], last[1], safe, 'move', res.passes.length]);
+    return out;
   };
 
   TS.CncFrame = Frame; TS.Cutter = Cutter;

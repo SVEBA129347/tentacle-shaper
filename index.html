@@ -69,6 +69,11 @@
         <div class="warn" data-i18n="cWarn"></div>
         <div class="cncbtns"><button id="cCalc" class="primary" data-i18n="cCalc">Рассчитать</button>
           <button id="cSaveDeck" data-i18n="cSaveDeck" disabled>G-code дека</button><button id="cSaveBot" data-i18n="cSaveBot" disabled>G-code дна</button></div>
+        <div id="simBox" class="simbox" hidden><div class="simrow"><button id="cSimPlay">▶</button>
+          <input id="cSimPos" type="range" min="0" max="1000" value="0">
+          <select id="cSimSpeed" data-i18n-title="cSimSpeedT"><option value="10">×10</option><option value="30">×30</option><option value="100" selected>×100</option><option value="300">×300</option></select></div>
+          <div id="cSimInfo" class="muted"></div></div>
+        <div class="cncbtns"><button id="cSheet" data-i18n="cSheet">Лист станка</button></div>
         <div id="cncInfo"></div>
         <div id="cncForm"></div>
       </div>

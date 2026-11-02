@@ -195,3 +195,7 @@ body.loaded .status .hint { display: none; }
   .ppage { page-break-after: always; break-after: page; overflow: hidden; }
   .ppage svg { display: block; }
 }
+.simbox { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin: 8px 0; }
+.simrow { display: flex; gap: 6px; align-items: center; }
+.simrow input[type=range] { flex: 1; }
+#cSimInfo { font-size: 11px; margin-top: 4px; }

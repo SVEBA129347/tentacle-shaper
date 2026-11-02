@@ -12,7 +12,8 @@
     ['cncPlace', [['X0', 'cX0', 0.01], ['Yc', 'cYc', 0.01], ['Tb', 'cTb', 0.1], ['tilt', 'cTilt', 0.01], ['Z0', 'cZ0', 0.01]]],
     ['cncRough', [['roughStep', 'cRoughStep', 1], ['roughMargin', 'cRoughMargin', 0.5], ['roughLoops', 'cRoughLoops', 1], ['roughLoopStep', 'cRoughLoopStep', 0.5],
                   ['bridgeL', 'cBridgeL', 1], ['bridgeH', 'cBridgeH', 0.5]]],
-    ['cncFeed', [['feed', 'cFeed', 100], ['feedHead', 'cFeedHead', 100], ['safeZ', 'cSafeZ', 1]]]
+    ['cncFeed', [['feed', 'cFeed', 100], ['feedHead', 'cFeedHead', 100], ['safeZ', 'cSafeZ', 1]]],
+    ['cncOrder', [['mTail', 'cMTail', 1], ['mNose', 'cMNose', 1], ['endX', 'cEndX', 1], ['endY', 'cEndY', 1], ['endZ', 'cEndZ', 1]]]
   ];
 
   function fmt(v, d) { return isFinite(v) ? (+v).toFixed(d === undefined ? 2 : d) : '—'; }
@@ -27,6 +28,7 @@
       if (g[0] === 'cncPlace') h += '<div class="formbtns"><button id="cLevel" data-i18n="cLevel">' + TS.t('cLevel') + '</button><button id="cCenter" data-i18n="cCenter">' + TS.t('cCenter') + '</button></div>';
       if (g[0] === 'cncLines') h += '<label class="chk"><input data-k="stringer" type="checkbox"> <span data-i18n="cStringer">' + TS.t('cStringer') + '</span></label>' +
         '<label class="chk"><input data-k="endCut" type="checkbox"> <span data-i18n="cEndCut">' + TS.t('cEndCut') + '</span></label>';
+      if (g[0] === 'cncOrder') h += '<label class="chk"><input data-k="startNose" type="checkbox"> <span data-i18n="cStartNose">' + TS.t('cStartNose') + '</span></label>';
       if (g[0] === 'cncRough') h += '<label class="chk"><input data-k="rough" type="checkbox"> <span data-i18n="cRough">' + TS.t('cRough') + '</span></label>' +
         '<label class="chk"><input data-k="bridges" type="checkbox"> <span data-i18n="cBridges">' + TS.t('cBridges') + '</span></label>' +
         '<label class="chk"><input data-k="plugs" type="checkbox"> <span data-i18n="cPlugs">' + TS.t('cPlugs') + '</span></label>';
@@ -62,7 +64,7 @@
     var z0 = s.Z0; TS.cncCenter(s, model); var d = z0 - s.Z0; s.Z0 = z0; s.boardLo += d; s.boardHi += d;
   };
 
-  function invalidate() { U.res = { deck: null, bot: null }; U.stale = true; renderInfo(); redraw(); }
+  function invalidate() { simStop(); U.sim = null; U.res = { deck: null, bot: null }; U.stale = true; renderInfo(); redraw(); simUI(); }
 
   function compute() {
     var m = TS.state.model; if (!m) return;
@@ -70,7 +72,106 @@
     U.res.deck = TS.cncSide(m, U.s, 'deck');
     U.res.bot = TS.cncSide(m, U.s, 'bot');
     U.ms = Date.now() - t0; U.stale = false;
-    renderInfo(); redraw();
+    renderInfo(); buildSim(); redraw();
+  }
+
+  // ---------- симуляция: фреза едет по программе (без учёта разгона) ----------
+  function buildSim() {
+    var res = U.res[U.side]; if (!res) { U.sim = null; simUI(); return; }
+    var path = TS.cncPath(res, U.s), cum = [0];
+    for (var i = 1; i < path.length; i++) cum.push(cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1], path[i][2] - path[i - 1][2]));
+    U.sim = { side: U.side, path: path, cum: cum, lines: res.passes.length, total: cum[cum.length - 1], pos: 0, playing: false };
+    simUI();
+  }
+  function simAt(d) {
+    var S = U.sim, c = S.cum, lo = 0, hi = c.length - 1;
+    while (hi - lo > 1) { var m = (lo + hi) >> 1; if (c[m] <= d) lo = m; else hi = m; }
+    var a = S.path[lo], b = S.path[hi], t = c[hi] > c[lo] ? (d - c[lo]) / (c[hi] - c[lo]) : 0;
+    return { i: lo, p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t], kind: b[3] };
+  }
+  function simStop() { if (U.sim) U.sim.playing = false; if (U.raf) cancelAnimationFrame(U.raf); U.raf = null; }
+  function simTick(ts) {
+    var S = U.sim; if (!S || !S.playing) return;
+    if (S.ts) {
+      var k = parseFloat($('cSimSpeed').value) || 50, dt = Math.min(0.1, (ts - S.ts) / 1000);
+      S.pos = Math.min(S.total, S.pos + U.s.feed / 60 * dt * k);   // мм/мин → мм/с, ускорено в k раз
+      if (S.pos >= S.total) S.playing = false;
+    }
+    S.ts = ts; simUI(); redraw();
+    if (S.playing) U.raf = requestAnimationFrame(simTick);
+  }
+  function mmss(sec) { sec = Math.max(0, Math.round(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), q = sec % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (q < 10 ? '0' : '') + q; }
+  function simUI() {
+    var S = U.sim, box = $('simBox'); if (!box) return;
+    box.hidden = !S;
+    if (!S) return;
+    $('cSimPlay').textContent = S.playing ? '❚❚' : '▶';
+    if (document.activeElement !== $('cSimPos')) $('cSimPos').value = S.total ? Math.round(S.pos / S.total * 1000) : 0;
+    var a = simAt(S.pos), f = U.s.feed / 60;
+    $('cSimInfo').textContent = TS.t(S.side === 'deck' ? 'cDeck' : 'cBot') + ' · ' + TS.t('cSimLine') + ' ' + S.path[a.i + 1 < S.path.length ? a.i + 1 : a.i][4] + '/' + S.lines + ' (' + TS.t('cK_' + (a.kind || 'move')) + ')' + ' · ' +
+      mmss(S.pos / f) + ' / ' + mmss(S.total / f) + ' · X ' + fmt(a.p[0], 1) + ' Y ' + fmt(a.p[1], 1) + ' Z ' + fmt(a.p[2], 1);
+  }
+  function drawSimTop(v) {
+    var S = U.sim; if (!S || S.side !== U.side || S.pos <= 0) return;
+    var a = simAt(S.pos), ctx = v.ctx;
+    ctx.beginPath();
+    for (var i = 0; i <= a.i; i++) { var q = v.toScreen(S.path[i][0], S.path[i][1]); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }
+    var e = v.toScreen(a.p[0], a.p[1]); ctx.lineTo(e[0], e[1]);
+    ctx.strokeStyle = 'rgba(29,43,54,0.85)'; ctx.lineWidth = 1.6; ctx.stroke();
+    var circ = []; for (var k = 0; k <= 32; k++) circ.push([a.p[0] + U.s.D / 2 * Math.cos(k / 16 * Math.PI), a.p[1] + U.s.D / 2 * Math.sin(k / 16 * Math.PI)]);
+    v.poly(circ, { fill: 'rgba(194,37,92,0.35)', stroke: '#c2255c', width: 1.5 }, true);
+  }
+  function drawSimSide(v) {
+    var S = U.sim; if (!S || S.side !== U.side || S.pos <= 0) return;
+    var a = simAt(S.pos), R = U.s.D / 2;
+    v.poly([[a.p[0] - R, a.p[2]], [a.p[0] + R, a.p[2]], [a.p[0] + R, a.p[2] + 60], [a.p[0] - R, a.p[2] + 60]], { fill: 'rgba(194,37,92,0.35)', stroke: '#c2255c', width: 1.5 }, true);
+  }
+
+  // ---------- лист станка (печать / PDF) ----------
+  function machineSheet() {
+    var s = U.s, st = TS.state, b = st.board, m = st.model, ms = m.measures(), mm = TS.t('mm');
+    var W = 297, H = 210, M = 12, out = '', y = M + 6;
+    function T(x, yy, t, size, bold, anchor) { return '<text x="' + x + '" y="' + yy + '" font-size="' + (size || 3.2) + '" font-family="Arial, Helvetica, sans-serif"' + (bold ? ' font-weight="bold"' : '') + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text>'; }
+    out += T(M, y, b.fileName.replace(/\.s3dx$/i, '') + ' — ' + TS.t('cSheetT'), 6, true);
+    out += T(W - M, y, new Date().toLocaleString(), 3, false, 'end');
+    y += 7;
+    out += T(M, y, fmt(ms.lengthDev, 1) + ' × ' + fmt(ms.width, 1) + ' × ' + fmt(ms.thick, 1) + ' ' + mm + ' · ' + TS.t('volume') + ' ' + fmt(m.volume(), 2) + ' ' + TS.t('l'), 3.6);
+    y += 8;
+    var rows = [
+      [TS.t('cncCutter'), 'D ' + s.D + ' · R ' + s.r1 + ' · R ' + s.R2],
+      [TS.t('cncLines'), TS.t('cNDeck') + ' ' + s.nDeck + ' · ' + TS.t('cNBot') + ' ' + s.nBot + ' · ' + TS.t('cNRail') + ' ' + s.nRail + ' · ' + TS.t('cVarMax') + ' ' + s.varMax],
+      [TS.t('cX0'), fmt(s.X0, 2) + ' ' + mm], [TS.t('cYc'), fmt(s.Yc, 2) + ' ' + mm], [TS.t('cTb'), fmt(s.Tb, 1) + ' ' + mm],
+      [TS.t('cTilt'), fmt(s.tilt, 3) + '°'], [TS.t('cZ0'), fmt(s.Z0, 2) + ' ' + mm],
+      [TS.t('cGaps'), fmt(s.boardLo, 1) + ' / ' + fmt(s.Tb - s.boardHi, 1) + ' ' + mm],
+      [TS.t('cncRough'), s.rough ? (TS.t('cRoughStep') + ' ' + s.roughStep + ' · ' + TS.t('cRoughMargin') + ' ' + s.roughMargin + ' · ' + TS.t('cRoughLoops') + ' ' + s.roughLoops) : '—'],
+      [TS.t('cBridges'), s.bridges ? (s.bridgeL + ' × ' + s.bridgeH + ' ' + mm) : '—'],
+      [TS.t('cPlugs'), s.plugs ? (TS.cncBoxes(b).reduce(function (a, q) { return a + q.places.length; }, 0) + ' ' + TS.t('cPcs')) : '—'],
+      [TS.t('cncFeed'), s.feed + ' ' + TS.t('cFeedU') + ' · ' + TS.t('cSafeZ') + ' ' + s.safeZ + ' ' + mm],
+      [TS.t('cncOrder'), (s.startNose ? TS.t('cStartNose') : TS.t('cStartTail')) + ' · ' + TS.t('cMTail') + ' ' + s.mTail + ' · ' + TS.t('cMNose') + ' ' + s.mNose + ' · ' + TS.t('cEndPos') + ' ' + s.endX + ', ' + s.endY + ', ' + s.endZ]
+    ];
+    rows.forEach(function (r) { out += T(M, y, r[0], 3.1, true) + T(M + 62, y, r[1], 3.1); y += 5.2; });
+    y += 3;
+    if (!U.stale && U.res.deck) {
+      ['deck', 'bot'].forEach(function (side) {
+        var q = stats(U.res[side]);
+        out += T(M, y, TS.t(side === 'deck' ? 'cDeck' : 'cBot'), 3.3, true) + T(M + 62, y, q.lines + ' ' + TS.t('cPasses') + ' · ' + q.n + ' ' + TS.t('cPoints') + ' · ' + fmt(q.len / 1000, 1) + ' ' + TS.t('cMeters') + ' ≈ ' + fmt(q.len / s.feed, 0) + ' ' + TS.t('cMin') +
+          ' · X ' + fmt(q.minX, 0) + '…' + fmt(q.maxX, 0) + ' · Y ' + fmt(q.minY, 0) + '…' + fmt(q.maxY, 0) + ' · Z ' + fmt(q.minZ, 1) + '…' + fmt(q.maxZ, 1), 3.1);
+        y += 5.2;
+      });
+    } else { out += T(M, y, TS.t('cNotYet'), 3.1); y += 5.2; }
+    // доска в бланке (вид сбоку, по высоте ×3), координаты станка
+    var fr = new TS.CncFrame(s, 'deck'), Lx = Math.max(m.L * 10 + s.X0 + 40, 2000), sc = (W - 2 * M) / Lx, ex = 3, base = H - M - 8, top = [], bot = [];
+    function P(X, Z) { return (M + X * sc).toFixed(2) + ' ' + (base - Z * sc * ex).toFixed(2); }
+    for (var i = 0; i <= 160; i++) {
+      var x = m.L * i / 160, c = m.sectionCtrl(x), zs = c.P.map(function (p) { return p[1]; });
+      var a = fr.p(x * 10, 0, Math.max.apply(null, zs) * 10), bb = fr.p(x * 10, 0, Math.min.apply(null, zs) * 10);
+      top.push(P(a[0], a[2])); bot.push(P(bb[0], bb[2]));
+    }
+    out += '<path d="M' + P(0, 0) + 'L' + P(Lx, 0) + 'L' + P(Lx, s.Tb) + 'L' + P(0, s.Tb) + 'Z" fill="none" stroke="#777" stroke-width="0.25" stroke-dasharray="2 1.5"/>';
+    out += '<path d="M' + top.join('L') + 'L' + bot.reverse().join('L') + 'Z" fill="none" stroke="#000" stroke-width="0.35"/>';
+    out += T(M, base + 5, '0', 2.6) + T(W - M, base - s.Tb * sc * ex - 2, TS.t('cSheetSide'), 2.6, false, 'end');
+    out += T(M, H - 4, TS.t('cWarn'), 2.8);
+    return '<div class="ppage" style="width:' + W + 'mm;height:' + H + 'mm"><svg xmlns="http://www.w3.org/2000/svg" width="' + W + 'mm" height="' + H + 'mm" viewBox="0 0 ' + W + ' ' + H + '">' + out + '</svg></div>';
   }
 
   function stats(res) {
@@ -123,6 +224,7 @@
       var col = p.kind === 'stringer' || p.kind === 'endcut' ? '#d9480f' : p.kind === 'rough' ? '#adb5bd' : (U.side === 'deck' ? '#1971c2' : '#2f9e44');
       v.poly(p.pts.map(function (q) { return [q[0], q[1]]; }), { stroke: col, width: 1 });
     });
+    drawSimTop(v);
     v.dot(0, 0, 4, '#c2255c');
     v.label(0, 0, '0', '#c2255c', 'left', -8);
   }
@@ -155,6 +257,7 @@
       var st = res.passes.filter(function (p) { return p.kind === 'stringer'; })[0];
       if (st) v.poly(st.pts.map(function (q) { return [q[0], q[2]]; }), { stroke: '#d9480f', width: 1.2 });
     }
+    drawSimSide(v);
     var c2 = v.ctx; c2.font = '12px system-ui, sans-serif'; c2.fillStyle = '#6b7a88'; c2.textAlign = 'right';
     if (v.exag > 1.01) c2.fillText(TS.t('vexag') + v.exag, v.w - 10, 18);
   }
@@ -193,8 +296,16 @@
       for (var i = 0; i < sb.length; i++) sb[i].addEventListener('click', function (e) {
         U.side = e.currentTarget.getAttribute('data-s');
         for (var j = 0; j < sb.length; j++) sb[j].classList.toggle('on', sb[j] === e.currentTarget);
-        U.vTop.fitted = U.vSide.fitted = false; redraw();
+        U.vTop.fitted = U.vSide.fitted = false; simStop(); buildSim(); redraw();
       });
+      $('cSimPlay').addEventListener('click', function () {
+        var S = U.sim; if (!S) return;
+        if (S.playing) { simStop(); simUI(); return; }
+        if (S.pos >= S.total) S.pos = 0;
+        S.playing = true; S.ts = 0; U.raf = requestAnimationFrame(simTick); simUI();
+      });
+      $('cSimPos').addEventListener('input', function () { var S = U.sim; if (!S) return; S.pos = S.total * $('cSimPos').value / 1000; simUI(); redraw(); });
+      $('cSheet').addEventListener('click', function () { TS.printPages(machineSheet(), true, 'A4'); });
       window.addEventListener('resize', function () { if (U.vTop) { U.vTop.fitted = U.vSide.fitted = false; redraw(); } });
     },
     // новая доска — настройки из файла; правка формы доски — только сброс расчёта

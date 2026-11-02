@@ -209,6 +209,13 @@
     $('dlgPrint').hidden = true;
     setTimeout(function () { window.print(); }, 50);
   }
+  // напечатать готовые страницы (для листа станка)
+  TS.printPages = function (html, land, paper) {
+    var pz = PAPER[paper || 'A4'];
+    $('printArea').innerHTML = html;
+    $('printPageCss').textContent = '@page { size: ' + (land ? pz[1] + 'mm ' + pz[0] + 'mm' : pz[0] + 'mm ' + pz[1] + 'mm') + '; margin: 0; }';
+    setTimeout(function () { window.print(); }, 50);
+  };
   TS.printBuild = build;      // для проверок
   TS.printUI = {
     init: function () {
