@@ -235,7 +235,8 @@ button.big { font-size: 15px; padding: 9px 18px; border-radius: 9px; }
 
 /* ---------- страница «Плавник-насос» ---------- */
 body:not([data-tab="fin"]) .only-fin { display: none; }
-body[data-tab="fin"] .empty, body[data-tab="fin"] .work { display: none !important; }
+body:not([data-tab="foil"]) .only-foil { display: none; }
+body[data-tab="fin"] .empty, body[data-tab="fin"] .work, body[data-tab="foil"] .empty, body[data-tab="foil"] .work { display: none !important; }
 .page { position: absolute; inset: 0; overflow: auto; background: var(--bg); }
 .fin-wrap { max-width: 1040px; margin: 0 auto; padding: 28px 24px 48px; }
 .fin-head { display: flex; gap: 20px; align-items: center; margin-bottom: 18px; }
@@ -260,3 +261,19 @@ body[data-tab="fin"] .empty, body[data-tab="fin"] .work { display: none !importa
 .fin-cols .small { font-size: 12px; color: var(--muted); }
 .fin-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 @media (max-width: 760px) { .fin-cols { grid-template-columns: 1fr; } .fin-head { flex-direction: column; align-items: flex-start; } .fin-badge { height: 72px; } }
+
+/* ---------- страница «Фойл» ---------- */
+.foil-wrap { max-width: 1200px; }
+.foil-grid { display: grid; grid-template-columns: 1fr 330px; gap: 24px; align-items: start; }
+.foil-main { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.foil-svg { display: block; width: 100%; height: auto; font: 12px "Golos Text", system-ui, sans-serif; fill: #6b6b63; }
+.foil-svg .cap { fill: #161616; font-weight: 600; }
+.foil-side { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.foil-side h3 { margin: 14px 0 8px; font-size: 12px; color: var(--muted); font-weight: 600; }
+.foil-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+.foil-presets span { font-size: 12px; color: var(--muted); margin-right: 2px; }
+.foil-presets button { font-size: 12px; padding: 3px 9px; }
+.foil-presets button.on { background: var(--brand); border-color: var(--brand-line); }
+.foil-side .small { font-size: 11px; color: var(--muted); line-height: 1.45; }
+@media (max-width: 900px) { .foil-grid { grid-template-columns: 1fr; } }
+#foForm input[data-fo="naca"] { width: 90px; flex: none; text-align: right; font: inherit; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; }
