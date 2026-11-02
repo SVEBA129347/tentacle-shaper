@@ -903,11 +903,11 @@
     r.readAsArrayBuffer(f);
   }
   TS.loadBuffer = loadBuffer;   // для проверок
-  // готовая доска: классический серф 6'0" (лежит рядом с программой)
+  // готовая доска: шортборд 6'1" из шейпов Томаса (лежит рядом с программой)
   TS.newBoard = function () {
     if (st.ed && st.ed.dirty && !confirm(TS.t('discard'))) return;
-    fetch('boards/classic.s3dx').then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-      .then(function (buf) { loadBuffer(buf, "Classic 6'0.s3dx"); })
+    fetch('boards/short.s3dx').then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(function (buf) { loadBuffer(buf, 'Short.s3dx'); })
       .catch(function (e) { $('msg').textContent = TS.t('err') + ': ' + e.message; });
   };
   TS.appHeavy = function () { heavy(); };
