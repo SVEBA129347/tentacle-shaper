@@ -298,7 +298,7 @@ body:not([data-tab="culture"]) .only-culture { display: none; }
 .cu-hero h1 { font-size: 34px; margin: 0 0 8px; letter-spacing: -.3px; }
 .cu-kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
 .cu-hero .lead { font-size: 16px; line-height: 1.5; margin: 0; max-width: 66ch; color: #333; }
-.cu-book { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: center; background: #000; color: #fff; border-radius: 14px; padding: 18px; margin-bottom: 28px; }
+.cu-book { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; background: #000; color: #fff; border-radius: 14px; padding: 18px; margin-bottom: 28px; }
 .cu-book h2 { color: var(--brand); margin: 0 0 8px; font-size: 20px; }
 .cu-book p { line-height: 1.55; margin: 0; color: #e8e8e2; }
 .cu-photo { aspect-ratio: 4 / 3; border: 2px dashed #555; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; color: #999; font-size: 13px; overflow: hidden; }

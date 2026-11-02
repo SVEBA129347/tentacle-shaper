@@ -1212,7 +1212,9 @@
       if (st.ed && st.ed.dirty) { e.preventDefault(); e.returnValue = ''; }
     });
     window.addEventListener('resize', function () { if (st.model) { vTop.fitted = vSide.fitted = vSlice.fitted = false; redraw2d(); } });
-    setTab(location.hash === '#fin' ? 'fin' : location.hash === '#foil' ? 'foil' : location.hash === '#culture' ? 'culture' : 'design');
+    // на домене tentacle.surf первой открывается Good Vibes Department
+    var home = /tentacle\.surf$/.test(location.hostname) ? 'culture' : 'design';
+    setTab(location.hash === '#fin' ? 'fin' : location.hash === '#foil' ? 'foil' : location.hash === '#culture' ? 'culture' : location.hash === '#design' ? 'design' : home);
   }
   function markLang() {
     var lb = document.querySelectorAll('.lang button');
