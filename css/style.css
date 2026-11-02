@@ -178,3 +178,9 @@ body.loaded .status .hint { display: none; }
 .boxform { margin-top: 6px; }
 .chip.box { border-color: #b197fc; color: #5f3dc4; }
 .chip.box.on { background: #5f3dc4; color: #fff; }
+
+.viewbtns { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.viewbtns button { font-size: 11px; padding: 2px 7px; }
+.steprow { margin-top: 6px; }
+.steprow input { width: 70px; }
+.seln { margin-left: auto; font-size: 11px; color: var(--sel, #c2255c); font-weight: 600; }

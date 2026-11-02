@@ -51,7 +51,17 @@
       boxTitle: 'Пробки плавников', bxX: 'Центр от хвоста, мм', bxY: 'От оси, мм', bxLen: 'Длина, мм', bxWid: 'Ширина, мм', bxDepth: 'Глубина, мм', bxToe: 'Развал, °', bxEven: 'Пара (слева и справа)', bxCut: 'Фрезеровать на станке', bxDel: 'Удалить пробку', bxAdd: '+ Пробка', bxHint: 'Пробку можно тянуть мышью на виде сверху и двигать стрелками.',
       ghostBtn: 'Сравнить…', ghostTip: 'Наложить другую доску (зелёным). Нажмите ещё раз, чтобы убрать.',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
-      editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Двойной щелчок по линии — новая точка, Del — удалить точку. Esc — снять выбор.'
+      stepL: 'Шаг стрелок', auto: 'авто', selN: 'выбрано точек:',
+      vH: 'Без точек', vHt: 'Спрятать точки (H)', vT: 'Касательные', vTt: 'Касательные всех точек; выключено — только у выбранной (T)',
+      vE: 'Ошибки', vEt: 'Показать ошибки: совпавшие точки — зелёные, петли — красные, изломы — оранжевые (E)',
+      vD: 'Глубина дуги', vDt: 'Щёлкните по участку кривой между двумя точками — глубина, хорда, длина, угол (D)',
+      errFound: 'Ошибки', errNone: 'Ошибок не найдено', errSame: 'точки совпадают', errZero: 'касательная нулевой длины', errKink: 'излом (оранжевый — проверьте, задуман ли)',
+      errLoop: 'петля', errAxis: 'сечение заходит за ось', errEndW: 'нулевая ширина на конце', errEndT: 'нулевая толщина на конце', errSlices: 'два сечения рядом',
+      arcDepth: 'Глубина дуги', arcChord: 'хорда', arcLen: 'длина', arcAng: 'угол',
+      slCopy: 'Копировать сечение', slCopyT: 'Ctrl+C на виде сечения', slPaste: 'Вставить', slPasteT: 'Ctrl+V: вставить скопированное сечение сюда (форма подгоняется под ширину и толщину)',
+      copied: 'Скопировано', pasted: 'Вставлено', pasteNeedSlice: 'Встаньте на сечение (кнопка справа), чтобы вставить',
+      pasteCount: 'Не вставить: другое число точек в сечении', pasteKind: 'Не вставить сюда',
+      editHint: 'Стрелки — сдвиг (Shift — в 2 раза мельче, Alt/Ctrl — в 4, вместе — в 10). Ctrl+щелчок — добавить точку к выбору, Shift+щелчок — все точки между, Ctrl+A — все. Tab — следующая точка. Двойной щелчок по линии — новая точка, Del — удалить. Ctrl+C / Ctrl+V — копировать и вставить кривую или сечение. Esc — снять выбор.'
     },
     en: {
       open: 'Open .s3dx', design: 'Design', view3d: '3D',
@@ -102,7 +112,17 @@
       boxTitle: 'Fin plugs', bxX: 'Center from tail, mm', bxY: 'From axis, mm', bxLen: 'Length, mm', bxWid: 'Width, mm', bxDepth: 'Depth, mm', bxToe: 'Toe, °', bxEven: 'Pair (left and right)', bxCut: 'Cut on the machine', bxDel: 'Delete plug', bxAdd: '+ Plug', bxHint: 'Drag a plug in the top view or move it with arrows.',
       ghostBtn: 'Compare…', ghostTip: 'Overlay another board (green). Press again to remove.',
       deckFit: 'Stringer top approximated by a Bezier curve within',
-      editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Double click on a curve adds a point, Del deletes it. Esc — deselect.'
+      stepL: 'Arrow step', auto: 'auto', selN: 'points selected:',
+      vH: 'Hide points', vHt: 'Hide control points (H)', vT: 'Tangents', vTt: 'Tangents of all points; off — only for the selected one (T)',
+      vE: 'Errors', vEt: 'Show errors: superposed points green, loops red, kinks orange (E)',
+      vD: 'Arc depth', vDt: 'Click a curve section between two points — depth, chord, length, angle (D)',
+      errFound: 'Errors', errNone: 'No errors found', errSame: 'superposed points', errZero: 'zero-length tangent', errKink: 'kink (orange — check it is intended)',
+      errLoop: 'loop', errAxis: 'slice crosses the axis', errEndW: 'zero width at the end', errEndT: 'zero thickness at the end', errSlices: 'two slices too close',
+      arcDepth: 'Arc depth', arcChord: 'chord', arcLen: 'length', arcAng: 'angle',
+      slCopy: 'Copy slice', slCopyT: 'Ctrl+C in the slice view', slPaste: 'Paste', slPasteT: 'Ctrl+V: paste the copied slice here (fitted to this width and thickness)',
+      copied: 'Copied', pasted: 'Pasted', pasteNeedSlice: 'Go to a slice (buttons on the right) to paste',
+      pasteCount: 'Cannot paste: different number of slice points', pasteKind: 'Cannot paste here',
+      editHint: 'Arrows move (Shift — 2× finer, Alt/Ctrl — 4×, both — 10×). Ctrl+click adds a point to the selection, Shift+click — all points between, Ctrl+A — all. Tab — next point. Double click on a curve adds a point, Del deletes. Ctrl+C / Ctrl+V — copy and paste a curve or slice. Esc — deselect.'
     }
   };
   var lang = 'ru';

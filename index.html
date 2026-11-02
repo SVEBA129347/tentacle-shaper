@@ -77,8 +77,10 @@
           <label><span id="selVl">Y</span><input id="selV" inputmode="decimal"></label><span class="unit" data-i18n="mm">мм</span></div>
         <div class="ptypes"><button data-t="smooth" data-i18n="tSmooth">Плавная</button><button data-t="corner" data-i18n="tCorner">Излом</button><button data-t="axis" data-i18n="tAxis">Горизонт.</button>
           <button id="delPt" class="danger" data-i18n="delPt">Удалить точку</button></div>
+        <div class="selrow steprow"><label><span data-i18n="stepL">Шаг стрелок</span><input id="stepIn" inputmode="decimal"></label><span class="unit" data-i18n="mm">мм</span><span id="selN" class="seln"></span></div>
         <div class="selhint" data-i18n="editHint"></div>
       </div>
+      <div class="viewbtns"><button data-v="H" class="toggle" data-i18n="vH" data-i18n-title="vHt">Без точек</button><button data-v="T" class="toggle" data-i18n="vT" data-i18n-title="vTt">Касательные</button><button data-v="E" class="toggle" data-i18n="vE" data-i18n-title="vEt">Ошибки</button><button data-v="D" class="toggle" data-i18n="vD" data-i18n-title="vDt">Глубина дуги</button></div>
       <h3 data-i18n="dims">Размеры</h3>
       <div id="dims"></div>
       <h3 data-i18n="slices">Сечения</h3>
@@ -105,6 +107,7 @@
       <div id="barList" class="chips"></div>
       <label class="chk follow"><input id="followChk" type="checkbox"> <span data-i18n="follow">Сечение за мышкой (X)</span></label>
       <div class="slbtns"><button id="slAdd" data-i18n="slAdd">+ Сечение здесь</button><button id="slDel" class="danger" data-i18n="slDel">Удалить сечение</button>
+        <button id="slCopy" data-i18n="slCopy" data-i18n-title="slCopyT">Копировать сечение</button><button id="slPaste" data-i18n="slPaste" data-i18n-title="slPasteT">Вставить</button>
         <label id="slMoveL"><span data-i18n="slX">X сечения</span> <input id="slX" type="number" step="1"> <span data-i18n="mm">мм</span></label></div>
       </div>
     </aside>

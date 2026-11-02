@@ -390,5 +390,66 @@
     '<PointCenter><Point3d><x>0.000000</x><y>0.000000</y><z>0.000000</z><u>-1.000000</u><color>0</color></Point3d></PointCenter>' +
     '<FinLength>10.160</FinLength><AngleOz>0.0000</AngleOz><CutCNC>1</CutCNC></Box></Box_0>';
 
+  // ---------- несколько выбранных точек ----------
+  // sels: [{key,i,kind}]; du, dv — сдвиг в плоскости вида (см). Точки идут в порядке, при котором
+  // соседи не мешают друг другу (при сдвиге вправо — справа налево).
+  E.prototype.moveGroup = function (sels, du, dv, alt) {
+    var self = this;
+    var list = sels.slice().sort(function (a, b) {
+      if (a.key !== b.key) return a.key < b.key ? -1 : 1;
+      var sl = a.key.indexOf('slice:') === 0;
+      return (sl ? 1 : (du >= 0 ? -1 : 1)) * (a.i - b.i);
+    });
+    list.forEach(function (s) {
+      if (!self.curve(s.key)) return;
+      var v = self.value(s);
+      self.move(s.key, s.i, s.kind, v[0] + du, v[1] + dv, alt);
+    });
+  };
+
+  // ---------- копировать / вставить ----------
+  // копия кривой: точки и типы; сечение хранится вместе с шириной (апекс) и высотами стрингера
+  E.prototype.copyCurve = function (key) {
+    var c = this.curve(key); if (!c) return null;
+    var o = { kind: key.indexOf('slice:') === 0 ? 'slice' : key, d: cp(c), L: this.b.length };
+    if (o.kind === 'slice') { o.a = this.a; o.n = c.P.length; }
+    if (key === 'thick') o.S = c.P[c.P.length - 1][0];
+    return o;
+  };
+  // вставка. Сечение: форма копии, подогнанная под ширину и толщину этого места.
+  // Кривая (контур, рокер, толщина): по длине растягивается под эту доску.
+  E.prototype.pasteCurve = function (key, clip) {
+    var c = this.curve(key); if (!c || !clip) return 'bad';
+    var kind = key.indexOf('slice:') === 0 ? 'slice' : key;
+    if (kind !== clip.kind) return 'kind';
+    var d = clip.d, i;
+    if (kind === 'slice') {
+      if (d.P.length !== c.P.length) return 'count';
+      var a = this.a, x = c.P[0][0], n = c.P.length;
+      var yA = c.P[a][1], z0 = c.P[0][2], z1 = c.P[n - 1][2];
+      var sy = d.P[a][1], s0 = d.P[0][2], s1 = d.P[n - 1][2];
+      var ky = sy > 1e-6 ? yA / sy : 1, kz = (s1 - s0) ? (z1 - z0) / (s1 - s0) : 1;
+      ['P', 'T1', 'T2'].forEach(function (g) {
+        for (i = 0; i < n; i++) { c[g][i][0] = x; c[g][i][1] = d[g][i][1] * ky; c[g][i][2] = z0 + (d[g][i][2] - s0) * kz; }
+      });
+      if (d.ttype) c.ttype = d.ttype.slice();
+      c.free = d.free ? d.free.slice() : c.P.map(function () { return false; });
+    } else {
+      if (key === 'deck') return 'kind';
+      var kx = key === 'thick' ? (c.P[c.P.length - 1][0] / (clip.S || 1)) : (this.b.length / (clip.L || 1));
+      var nd = cp(d);
+      ['P', 'T1', 'T2'].forEach(function (g) { nd[g].forEach(function (p) { p[0] *= kx; }); });
+      var nn = nd.P.length;
+      if (key !== 'thick') { nd.P[0][0] = 0; nd.P[nn - 1][0] = this.b.length; }
+      c.P = nd.P; c.T1 = nd.T1; c.T2 = nd.T2;
+      var zeros = nd.P.map(function () { return 0; });
+      c.ctype = nd.ctype || zeros.slice(); c.ttype = nd.ttype || zeros.slice();
+      c.free = nd.free || nd.P.map(function () { return false; });
+      if (key === 'bot' || key === 'thick') this.regenDeck();
+    }
+    this.sync(); this.dirty = true; this.everEdited = true;
+    return 'ok';
+  };
+
   TS.Editor = E;
 })(window.TS = window.TS || {});
