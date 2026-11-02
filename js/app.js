@@ -36,7 +36,7 @@
   }
   function editKey(view) {
     if (view === vTop) return 'otl';
-    if (view === vSide) return st.sideMode === 'thick' ? 'thick' : 'bot';
+    if (view === vSide) return st.sideMode === 'thick' ? 'thick' : ['bot', 'deck'];
     if (view === vSlice) { var k = sliceIndexAtCursor(); return k >= 0 ? 'slice:' + k : null; }
     return null;
   }
@@ -101,6 +101,7 @@
       var cx = st.secX * 10;
       v.poly([[cx, st.model.zb(st.secX) * 10 - 8], [cx, st.model.zd(st.secX) * 10 + 8]], { stroke: C.cur, width: 2 });
       drawHandles(v, 'bot', 1);
+      drawHandles(v, 'deck', 1);
     }
     var c2 = v.ctx; c2.font = '12px system-ui, sans-serif'; c2.fillStyle = '#6b7a88'; c2.textAlign = 'right';
     if (v.exag > 1.01) c2.fillText(TS.t('vexag') + fmt(v.exag, 0), v.w - 10, 18);
@@ -131,7 +132,9 @@
   // ---------- мышь: захват и перетаскивание точек ----------
   function hit(view, sx, sy) {
     var key = editKey(view); if (!key) return null;
-    var hs = st.ed.handles(key), best = null, bd = HIT;
+    var keys = [].concat(key), hs = [];
+    keys.forEach(function (k) { hs = hs.concat(st.ed.handles(k)); });
+    var best = null, bd = HIT;
     var signs = key === 'otl' ? [1, -1] : [1];
     [true, false].forEach(function (wantP) {
       if (best) return;
@@ -200,7 +203,7 @@
     if (!s) { box.hidden = true; return; }
     box.hidden = false;
     var v = st.ed.value(s), n = axisNames(s.key);
-    var names = { otl: TS.t('outline'), bot: TS.t('rockerCurve'), thick: TS.t('thickCurve') };
+    var names = { otl: TS.t('outline'), bot: TS.t('rockerCurve'), deck: TS.t('deckCurve'), thick: TS.t('thickCurve') };
     var title = names[s.key] || (TS.t('slice') + ' ' + (+s.key.slice(6) + 1));
     $('selTitle').textContent = title + ' · ' + (s.kind === 'P' ? TS.t('point') : TS.t('tangent')) + ' ' + (s.i + 1);
     $('selUl').textContent = n[0]; $('selVl').textContent = n[1];
@@ -276,7 +279,7 @@
     st.sideMode = m;
     var bs = document.querySelectorAll('.sidemode:not(.cncside) button');
     for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-m') === m);
-    if (st.ed && st.ed.sel && (st.ed.sel.key === 'bot' || st.ed.sel.key === 'thick')) { st.ed.sel = null; showSel(); }
+    if (st.ed && st.ed.sel && (st.ed.sel.key === 'bot' || st.ed.sel.key === 'deck' || st.ed.sel.key === 'thick')) { st.ed.sel = null; showSel(); }
     sideBoundsMode(); vSide.fitted = false; if (st.model) vSide.redraw();
   }
   function sideBoundsMode() {

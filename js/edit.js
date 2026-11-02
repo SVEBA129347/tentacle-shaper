@@ -20,7 +20,12 @@
     var b = this.b;
     this.zb0 = b.strbot.byX(2); this.zd0 = b.strdeck.byX(2);
     this.deck0 = cp(b.strdeck);
-    this.diff0 = b.thickDiff ? b.thickDiff.byX(2) : null;
+    this.diffB = b.thickDiff ? cp(b.thickDiff) : null;
+    this._diff0();
+  };
+  // функция толщины «до правок» (смещается вместе с прямой правкой верха)
+  E.prototype._diff0 = function () {
+    this.diff0 = this.diffB ? new TS.Curve(this.diffB.P, this.diffB.T1, this.diffB.T2).byX(2) : null;
   };
 
   // ---------- кривые и их ключи ----------
@@ -28,6 +33,7 @@
     var b = this.b;
     if (key === 'otl') return b.otl;
     if (key === 'bot') return b.strbot;
+    if (key === 'deck') return b.strdeck;
     if (key === 'thick') return b.thickDiff;
     if (key.indexOf('slice:') === 0) return b.slices[+key.slice(6)];
     return null;
@@ -37,13 +43,14 @@
   E.prototype.snapshot = function () {
     var b = this.b;
     return { otl: cp(b.otl), bot: cp(b.strbot), deck: cp(b.strdeck), thick: b.thickDiff ? cp(b.thickDiff) : null,
-             slices: b.slices.map(cp) };
+             slices: b.slices.map(cp), deck0: cp(this.deck0), diffB: this.diffB ? cp(this.diffB) : null };
   };
   E.prototype.restore = function (s) {
     var b = this.b;
     TS.copyCurveInto(s.otl, b.otl); TS.copyCurveInto(s.bot, b.strbot); TS.copyCurveInto(s.deck, b.strdeck);
     if (s.thick && b.thickDiff) TS.copyCurveInto(s.thick, b.thickDiff);
     s.slices.forEach(function (c, i) { TS.copyCurveInto(c, b.slices[i]); });
+    this.deck0 = cp(s.deck0); this.diffB = s.diffB ? cp(s.diffB) : null; this._diff0();
     this.sync();
   };
   E.prototype.begin = function () { this.undo.push(this.snapshot()); if (this.undo.length > 200) this.undo.shift(); this.redo = []; };
@@ -107,6 +114,29 @@
   // key, i, kind: какая точка; u, v — новые координаты в плоскости вида (см); alt — без сглаживания
   E.prototype.move = function (key, i, kind, u, v, alt) {
     var c = this.curve(key); if (!c) return;
+    if (key === 'deck') {
+      // верх стрингера правится напрямую: смещаем и «базу» привязки, и кривую толщины на ту же величину,
+      // чтобы следующая правка рокера сохранила новую толщину
+      var before = cp(c);
+      if (kind === 'P') u = c.P[i][0];               // точки верха двигаются только по высоте
+      this._move('deck', i, kind, u, v, alt);
+      var self = this, d0 = this.deck0, df = this.b.thickDiff, dB = this.diffB;
+      ['P', 'T1', 'T2'].forEach(function (g) {
+        for (var k = 0; k < c[g].length; k++) {
+          var dx = c[g][k][0] - before[g][k][0], dz = c[g][k][2] - before[g][k][2];
+          if (!dx && !dz) continue;
+          d0[g][k][0] += dx; d0[g][k][2] += dz;
+          if (df && df[g][k]) { df[g][k][2] += dz; dB[g][k][2] += dz; }
+        }
+      });
+      this._diff0();
+      this.sync(); this.dirty = true; this.everEdited = true;
+      return;
+    }
+    this._move(key, i, kind, u, v, alt);
+  };
+  E.prototype._move = function (key, i, kind, u, v, alt) {
+    var c = this.curve(key); if (!c) return;
     var b = this.b, L = b.length, n = c.P.length;
     var slice = key.indexOf('slice:') === 0;
     var iu = slice ? 1 : 0, iv = (key === 'otl') ? 1 : 2;   // сверху: x,y; сбоку: x,z; сечение: y,z
@@ -151,6 +181,7 @@
       }
     }
     if (key === 'bot' || key === 'thick') this.regenDeck();
+    if (key === 'deck') return;
     this.sync();
     this.dirty = true; this.everEdited = true;
   };
