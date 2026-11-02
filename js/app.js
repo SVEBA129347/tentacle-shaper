@@ -94,7 +94,21 @@
     tip.forEach(function (e, i) { if (i) ctx.lineTo(e[0], e[1]); else ctx.moveTo(e[0], e[1]); });
     ctx.stroke();
   }
-  var REF = 'rgba(25,113,194,0.55)';
+  var REF = 'rgba(25,113,194,0.55)', GH = { stroke: 'rgba(47,158,68,0.85)', width: 1.4, dash: [8, 4] };
+  function ghostTop(v) {
+    if (!st.ghost) return;
+    var o = st.ghost.board.otl.sample(80).map(function (p) { return [p[0] * 10, p[1] * 10]; });
+    v.poly(o, GH); v.poly(o.map(function (p) { return [p[0], -p[1]]; }), GH);
+  }
+  function ghostSide(v) {
+    if (!st.ghost || st.sideMode === 'thick') return;
+    [st.ghost.board.strbot, st.ghost.board.strdeck].forEach(function (c) { v.poly(c.sample(80).map(function (p) { return [p[0] * 10, p[2] * 10]; }), GH); });
+  }
+  function ghostSlice(v) {
+    if (!st.ghost) return;
+    var x = Math.min(st.secX, st.ghost.L), h = st.ghost.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
+    v.poly(h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; })), GH, true);
+  }
   function refTop(v) {
     if (!st.showOrig || !st.refModel || !st.ed || !st.ed.everEdited) return;
     var o = st.refModel.board.otl.sample(80).map(function (p) { return [p[0] * 10, p[1] * 10]; });
@@ -239,7 +253,7 @@
     });
     var cx = st.secX * 10, cw = st.model.halfW(st.secX) * 10;
     v.poly([[cx, -cw - 15], [cx, cw + 15]], { stroke: C.cur, width: 2 });
-    drawBars(v, 'top'); refTop(v); drawBoxesTop(v);
+    drawBars(v, 'top'); refTop(v); ghostTop(v); drawBoxesTop(v);
     comb(v, st.board.otl, 0, 1, 1); comb(v, st.board.otl, 0, 1, -1);
     drawHandles(v, 'otl', 1);
   }
@@ -264,7 +278,7 @@
       });
       var cx = st.secX * 10;
       v.poly([[cx, st.model.zb(st.secX) * 10 - 8], [cx, st.model.zd(st.secX) * 10 + 8]], { stroke: C.cur, width: 2 });
-      drawBars(v, 'side'); refSide(v); drawBoxesSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
+      drawBars(v, 'side'); refSide(v); ghostSide(v); drawBoxesSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
       drawHandles(v, 'bot', 1);
       drawHandles(v, 'deck', 1);
     }
@@ -279,7 +293,7 @@
     var h = m.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
     var full = h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; }));
     v.poly(full, { fill: C.fill, stroke: C.line, width: 1.8 }, true);
-    refSlice(v); drawBoxesSlice(v);
+    refSlice(v); ghostSlice(v); drawBoxesSlice(v);
     if (k >= 0) { comb(v, st.board.slices[k], 1, 2, 1); drawHandles(v, 'slice:' + k, 1); }
     else {
       var c = m.sectionCtrl(x);
@@ -668,6 +682,20 @@
     $('barList').addEventListener('click', function (e) {
       var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
       st.bars.splice(+i, 1); renderBars(); redraw2d();
+    });
+    $('ghostBtn').addEventListener('click', function () {
+      if (st.ghost) { st.ghost = null; $('ghostBtn').classList.remove('on'); $('ghostBtn').title = TS.t('ghostTip'); redraw2d(); return; }
+      $('ghostFile').click();
+    });
+    $('ghostFile').addEventListener('change', function (e) {
+      var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try { st.ghost = new TS.Model(TS.parseS3dx(r.result, f.name)); $('ghostBtn').classList.add('on'); $('ghostBtn').title = f.name; $('msg').textContent = ''; }
+        catch (err) { $('msg').textContent = TS.t('err') + ': ' + err.message; }
+        redraw2d();
+      };
+      r.readAsArrayBuffer(f);
     });
     $('boxList').addEventListener('click', function (e) {
       var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
