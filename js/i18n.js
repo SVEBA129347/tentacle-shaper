@@ -48,6 +48,7 @@
       noPtSlice: 'В сечениях точки не добавляются: у всех сечений должно быть одинаковое число точек.',
       curvBtn: 'Кривизна', curvTip: 'Гребёнка кривизны правимых линий (K)', origBtn: 'Исходная', origTip: 'Форма на момент открытия/сохранения — голубым (O)',
       barsTitle: 'Мерные линейки', barAdd: '+ Линейка', follow: 'Сечение за мышкой (X)', trArc: 'по стрингеру', trThickV: 'толщина (верт.)',
+      boxTitle: 'Пробки плавников', bxX: 'Центр от хвоста, мм', bxY: 'От оси, мм', bxLen: 'Длина, мм', bxWid: 'Ширина, мм', bxDepth: 'Глубина, мм', bxToe: 'Развал, °', bxEven: 'Пара (слева и справа)', bxCut: 'Фрезеровать на станке', bxDel: 'Удалить пробку', bxAdd: '+ Пробка', bxHint: 'Пробку можно тянуть мышью на виде сверху и двигать стрелками.',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
       editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Двойной щелчок по линии — новая точка, Del — удалить точку. Esc — снять выбор.'
     },
@@ -97,6 +98,7 @@
       noPtSlice: 'Points are not added to slices: all slices must have the same number of points.',
       curvBtn: 'Curvature', curvTip: 'Curvature comb of edited curves (K)', origBtn: 'Original', origTip: 'Shape at open/save time in light blue (O)',
       barsTitle: 'Measurement bars', barAdd: '+ Bar', follow: 'Slice follows mouse (X)', trArc: 'along stringer', trThickV: 'thickness (vert.)',
+      boxTitle: 'Fin plugs', bxX: 'Center from tail, mm', bxY: 'From axis, mm', bxLen: 'Length, mm', bxWid: 'Width, mm', bxDepth: 'Depth, mm', bxToe: 'Toe, °', bxEven: 'Pair (left and right)', bxCut: 'Cut on the machine', bxDel: 'Delete plug', bxAdd: '+ Plug', bxHint: 'Drag a plug in the top view or move it with arrows.',
       deckFit: 'Stringer top approximated by a Bezier curve within',
       editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Double click on a curve adds a point, Del deletes it. Esc — deselect.'
     }

@@ -174,3 +174,7 @@ button.toggle.on { background: #e7f1fb; border-color: #74a9d8; }
 @media (max-width: 1520px) { .brand { font-size: 0; gap: 0; } }
 .bar .msg { max-width: 200px; overflow: hidden; }
 body.loaded .status .hint { display: none; }
+
+.boxform { margin-top: 6px; }
+.chip.box { border-color: #b197fc; color: #5f3dc4; }
+.chip.box.on { background: #5f3dc4; color: #fff; }

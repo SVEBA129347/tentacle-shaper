@@ -48,6 +48,7 @@
     var b = this.b;
     return { otl: cp(b.otl), bot: cp(b.strbot), deck: cp(b.strdeck), thick: b.thickDiff ? cp(b.thickDiff) : null,
              slices: b.slices.map(function (c) { return { c: c, d: cp(c) }; }), deck0: cp(this.deck0), bot0: cp(this.bot0), diffB: this.diffB ? cp(this.diffB) : null, L: b.length,
+             boxes: (b.boxes || []).map(function (o) { return { o: o, d: boxData(o) }; }),
              top: Object.keys(b.top).map(function (k) { return [k, cp(b.top[k].curve)]; }),
              side: Object.keys(b.side).map(function (k) { return [k, cp(b.side[k].curve)]; }) };
   };
@@ -58,6 +59,7 @@
     b.slices = s.slices.map(function (o) { TS.copyCurveInto(o.d, o.c); return o.c; });
     this.deck0 = cp(s.deck0); this.diffB = s.diffB ? cp(s.diffB) : null; this._diff0();
     if (s.L) b.length = s.L;
+    if (s.boxes) b.boxes = s.boxes.map(function (q) { Object.assign(q.o, q.d); return q.o; });
     (s.top || []).forEach(function (t) { if (b.top[t[0]]) TS.copyCurveInto(t[1], b.top[t[0]].curve); });
     (s.side || []).forEach(function (t) { if (b.side[t[0]]) TS.copyCurveInto(t[1], b.side[t[0]].curve); });
     this.bot0 = cp(s.bot0); this.zb0 = new TS.Curve(this.bot0.P, this.bot0.T1, this.bot0.T2).byX(2);
@@ -349,6 +351,44 @@
     this.renormSlices(); this.dirty = true; this.everEdited = true;
     return x;
   };
+
+  // ---------- вставки (пробки) ----------
+  function boxData(o) { return { x: o.x, y: o.y, len: o.len, wid: o.wid, depth: o.depth, ang: o.ang, even: o.even, cut: o.cut, changed: o.changed }; }
+  E.prototype.boxSet = function (i, f) {
+    var o = this.b.boxes[i]; if (!o) return;
+    Object.keys(f).forEach(function (k) { if (f[k] !== undefined && (typeof f[k] === 'boolean' || isFinite(f[k]))) o[k] = f[k]; });
+    if (o.len < o.wid) o.len = o.wid;
+    o.x = Math.max(o.len / 2, Math.min(this.b.length - o.len / 2, o.x));
+    o.changed = true; this.dirty = true; this.everEdited = true;
+  };
+  E.prototype.addBox = function (x, y) {
+    var b = this.b, src = b.boxes && b.boxes[0], w;
+    if (src) w = src.wrap.cloneNode(true);
+    else {
+      var d = new DOMParser().parseFromString(BOX_TPL, 'application/xml');
+      w = b.doc.importNode(d.documentElement, true);
+    }
+    var o = TS.readBox(w);
+    o.x = x; o.y = y; o.changed = true;
+    if (!src) { o.len = 9.75; o.wid = 4.5; o.depth = 1.55; o.ang = 0; o.even = true; o.cut = true; o.face = 1; }
+    b.boxes = b.boxes || []; b.boxes.push(o);
+    this.dirty = true; this.everEdited = true;
+    return b.boxes.length - 1;
+  };
+  E.prototype.deleteBox = function (i) {
+    if (!this.b.boxes || !this.b.boxes[i]) return false;
+    this.b.boxes.splice(i, 1); this.dirty = true; this.everEdited = true; return true;
+  };
+  // заготовка вставки в формате Shape3D (пробка 97.5 × 45 × 15.5 мм, пара)
+  var BOX_TPL = '<Box_0><Box><Name>Fin</Name><Length>9.750</Length><Width>4.500</Width><Height>1.550</Height><Diameter>4.500</Diameter>' +
+    '<C1C2>5.250</C1C2><Reflexion_coef>20</Reflexion_coef><Even>1</Even><Central>0</Central><SymNoseTail>0</SymNoseTail>' +
+    '<IFixedToBt>-1</IFixedToBt><DistFixedTo>0.000</DistFixedTo><AFixedTo>0.000</AFixedTo><FixedTail>1</FixedTail><FixedNose>0</FixedNose>' +
+    '<FixedCenter>0</FixedCenter><FixedRail>0</FixedRail><Face>1</Face><Style>2</Style>' +
+    '<Ref_point><Point3d><x>0.000000</x><y>0.000000</y><z>0.000000</z><u>-1.000000</u><color>0</color></Point3d></Ref_point>' +
+    '<PointRef><Point3d><x>0.000000</x><y>0.000000</y><z>0.000000</z><u>-1.000000</u><color>0</color></Point3d></PointRef>' +
+    '<PointRefDx>1.000</PointRefDx><PointRefDy>0.000</PointRefDy>' +
+    '<PointCenter><Point3d><x>0.000000</x><y>0.000000</y><z>0.000000</z><u>-1.000000</u><color>0</color></Point3d></PointCenter>' +
+    '<FinLength>10.160</FinLength><AngleOz>0.0000</AngleOz><CutCNC>1</CutCNC></Box></Box_0>';
 
   TS.Editor = E;
 })(window.TS = window.TS || {});

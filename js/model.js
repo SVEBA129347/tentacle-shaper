@@ -225,6 +225,16 @@
     };
   };
 
+  // высота низа доски в точке (x, |y|), см
+  Model.prototype.bottomZ = function (x, y) {
+    var sec = this.section(x, 40), a = this.apexIdx, n = a * 39 + 1, ay = Math.abs(y);
+    for (var i = 1; i < n && i < sec.length; i++) {
+      var p = sec[i - 1], q = sec[i];
+      if ((p[0] - ay) * (q[0] - ay) <= 0 && p[0] !== q[0]) return p[1] + (q[1] - p[1]) * (ay - p[0]) / (q[0] - p[0]);
+    }
+    return sec[0][1];
+  };
+
   // сетка поверхности для 3D: массив сечений (обе половины), мм
   Model.prototype.mesh = function (nx, nsec) {
     nx = nx || 140; nsec = nsec || 16;

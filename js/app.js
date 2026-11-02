@@ -144,6 +144,84 @@
     }).join('');
   }
 
+  // ---------- пробки плавников ----------
+  // места пробки: [{x, y, ang}] в см (пара — с зеркалом)
+  function boxPlaces(o) {
+    if (o.central || Math.abs(o.y) < 1e-6) return [{ x: o.x, y: 0, ang: 0, sign: 1 }];
+    var r = [{ x: o.x, y: Math.abs(o.y), ang: -Math.abs(o.ang), sign: 1 }];
+    if (o.even) r.push({ x: o.x, y: -Math.abs(o.y), ang: Math.abs(o.ang), sign: -1 });
+    return r;
+  }
+  function obround(o, pl) {
+    var h = Math.max(0, (o.len - o.wid) / 2), r = o.wid / 2, ca = Math.cos(pl.ang), sa = Math.sin(pl.ang), pts = [], q;
+    function P(u, v) { return [(pl.x + u * ca - v * sa) * 10, (pl.y + u * sa + v * ca) * 10]; }
+    for (q = 0; q <= 16; q++) { var t = -Math.PI / 2 + Math.PI * q / 16; pts.push(P(h + r * Math.cos(t), r * Math.sin(t))); }
+    for (q = 0; q <= 16; q++) { var t2 = Math.PI / 2 + Math.PI * q / 16; pts.push(P(-h + r * Math.cos(t2), r * Math.sin(t2))); }
+    return pts;
+  }
+  function drawBoxesTop(v) {
+    (st.board.boxes || []).forEach(function (o, i) {
+      var sel = st.selBox === i;
+      boxPlaces(o).forEach(function (pl) {
+        v.poly(obround(o, pl), { fill: sel ? 'rgba(95,61,196,0.25)' : 'rgba(95,61,196,0.10)', stroke: '#5f3dc4', width: sel ? 2 : 1.2 }, true);
+      });
+    });
+  }
+  function drawBoxesSide(v) {
+    if (st.sideMode === 'thick') return;
+    (st.board.boxes || []).forEach(function (o, i) {
+      if (o.face !== 1) return;
+      var zb = st.model.bottomZ(o.x, o.y) * 10, x0 = (o.x - o.len / 2) * 10, x1 = (o.x + o.len / 2) * 10;
+      v.poly([[x0, zb], [x1, zb], [x1, zb + o.depth * 10], [x0, zb + o.depth * 10]], { fill: 'rgba(95,61,196,0.15)', stroke: '#5f3dc4', width: st.selBox === i ? 2 : 1 }, true);
+    });
+  }
+  function drawBoxesSlice(v) {
+    (st.board.boxes || []).forEach(function (o) {
+      if (o.face !== 1 || Math.abs(st.secX - o.x) > o.len / 2) return;
+      boxPlaces(o).forEach(function (pl) {
+        var y = pl.y, zb = st.model.bottomZ(st.secX, y) * 10, w = o.wid / 2;
+        v.poly([[(y - w) * 10, zb], [(y + w) * 10, zb], [(y + w) * 10, zb + o.depth * 10], [(y - w) * 10, zb + o.depth * 10]], { fill: 'rgba(95,61,196,0.15)', stroke: '#5f3dc4', width: 1 }, true);
+      });
+    });
+  }
+  function boxHit(view, wx, wy) {
+    if (view !== vTop || !st.board.boxes) return -1;
+    var x = wx / 10, y = wy / 10;
+    for (var i = 0; i < st.board.boxes.length; i++) {
+      var o = st.board.boxes[i], pls = boxPlaces(o);
+      for (var k = 0; k < pls.length; k++) {
+        var pl = pls[k], dx = x - pl.x, dy = y - pl.y, ca = Math.cos(-pl.ang), sa = Math.sin(-pl.ang);
+        var u = dx * ca - dy * sa, vv = dx * sa + dy * ca, h = Math.max(0, (o.len - o.wid) / 2);
+        var du = Math.max(0, Math.abs(u) - h);
+        if (Math.hypot(du, vv) <= o.wid / 2) return { i: i, sign: pl.sign };
+      }
+    }
+    return -1;
+  }
+  function renderBoxes() {
+    var bx = st.board.boxes || [];
+    $('boxList').innerHTML = bx.map(function (o, i) {
+      return '<button class="chip box' + (st.selBox === i ? ' on' : '') + '" data-i="' + i + '">' + esc(o.name || 'Box') + ' · ' + fmt(o.x * 10, 0) + '</button>';
+    }).join('');
+    var o = bx[st.selBox];
+    $('boxForm').hidden = !o;
+    if (!o) return;
+    var ins = $('boxForm').querySelectorAll('input');
+    for (var i = 0; i < ins.length; i++) {
+      var k = ins[i].getAttribute('data-b');
+      if (ins[i] === document.activeElement) continue;
+      if (ins[i].type === 'checkbox') ins[i].checked = !!o[k];
+      else ins[i].value = k === 'ang' ? fmt(o.ang * 180 / Math.PI, 2) : fmt(o[k] * 10, 1);
+    }
+  }
+  function boxFromForm(e) {
+    var o = st.board.boxes[st.selBox]; if (!o) return;
+    var k = e.target.getAttribute('data-b'), f = {};
+    if (e.target.type === 'checkbox') f[k] = e.target.checked;
+    else { var v = parseFloat(e.target.value.replace(',', '.')); if (!isFinite(v)) return; f[k] = k === 'ang' ? v * Math.PI / 180 : v / 10; }
+    st.ed.begin(); st.ed.boxSet(st.selBox, f); heavy();
+  }
+
   // ---------- вид сверху ----------
   function drawTop(ctx, v) {
     var g = st.geo; v.grid(); if (!g) return;
@@ -161,7 +239,7 @@
     });
     var cx = st.secX * 10, cw = st.model.halfW(st.secX) * 10;
     v.poly([[cx, -cw - 15], [cx, cw + 15]], { stroke: C.cur, width: 2 });
-    drawBars(v, 'top'); refTop(v);
+    drawBars(v, 'top'); refTop(v); drawBoxesTop(v);
     comb(v, st.board.otl, 0, 1, 1); comb(v, st.board.otl, 0, 1, -1);
     drawHandles(v, 'otl', 1);
   }
@@ -186,7 +264,7 @@
       });
       var cx = st.secX * 10;
       v.poly([[cx, st.model.zb(st.secX) * 10 - 8], [cx, st.model.zd(st.secX) * 10 + 8]], { stroke: C.cur, width: 2 });
-      drawBars(v, 'side'); refSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
+      drawBars(v, 'side'); refSide(v); drawBoxesSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
       drawHandles(v, 'bot', 1);
       drawHandles(v, 'deck', 1);
     }
@@ -201,7 +279,7 @@
     var h = m.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
     var full = h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; }));
     v.poly(full, { fill: C.fill, stroke: C.line, width: 1.8 }, true);
-    refSlice(v);
+    refSlice(v); drawBoxesSlice(v);
     if (k >= 0) { comb(v, st.board.slices[k], 1, 2, 1); drawHandles(v, 'slice:' + k, 1); }
     else {
       var c = m.sectionCtrl(x);
@@ -239,7 +317,17 @@
   function onDown(sx, sy, e, view) {
     if (!st.ed) return false;
     var h = hit(view, sx, sy);
-    if (!h) return false;
+    if (!h) {
+      var w = view.toWorld(sx, sy), bh = boxHit(view, w[0], w[1]);
+      if (bh === -1) { if (st.selBox !== undefined && st.selBox !== null) { st.selBox = null; renderBoxes(); redraw2d(); } return false; }
+      var o = st.board.boxes[bh.i];
+      st.selBox = bh.i; st.ed.sel = null; showSel();
+      st.ed.begin();
+      st.drag = { box: true, sign: bh.sign, ox: o.x - w[0] / 10, oy: Math.abs(o.y) - bh.sign * w[1] / 10, changed: false };
+      renderBoxes(); redraw2d();
+      return true;
+    }
+    st.selBox = null;
     st.ed.sel = { key: h.key, i: h.i, kind: h.kind };
     st.ed.begin();
     st.drag = { sign: h.sign, changed: false }; st.lastSign = h.sign;
@@ -247,6 +335,13 @@
     return true;
   }
   function onDrag(wx, wy, e) {
+    if (st.drag && st.drag.box) {
+      var o = st.board.boxes[st.selBox];
+      var ny = Math.max(o.central ? 0 : o.wid / 2, st.drag.sign * wy / 10 + st.drag.oy);
+      st.ed.boxSet(st.selBox, { x: wx / 10 + st.drag.ox, y: o.y < 0 ? -ny : ny });
+      st.drag.changed = true; redraw2d(); renderBoxes(); markDirty();
+      return;
+    }
     var s = st.ed.sel; if (!s || !st.drag) return;
     var u = wx / 10, v = st.drag.sign * wy / 10;
     st.ed.move(s.key, s.i, s.kind, u, v, e.altKey);
@@ -401,7 +496,9 @@
   }
 
   // ---------- панель размеров ----------
+  function renderDimsHook() { renderBoxes(); }
   function renderDims() {
+    renderDimsHook();
     var m = st.model, b = st.board; if (!m) return;
     var ms = st.ms || (st.ms = m.measures());
     var vol = st.vol || (st.vol = m.volume());
@@ -469,7 +566,7 @@
       var b = TS.parseS3dx(buf, name);
       st.board = b; st.model = new TS.Model(b); st.ms = null; st.vol = null; st.viewed3d = false; st.rmMs = null;
       setRef(buf);
-      st.ed = new TS.Editor(b, st.model.apexIdx);
+      st.ed = new TS.Editor(b, st.model.apexIdx); st.selBox = null;
       buildGeo();
       document.body.classList.add('loaded');
       $('thickBtn').disabled = !b.thickDiff;
@@ -572,6 +669,19 @@
       var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
       st.bars.splice(+i, 1); renderBars(); redraw2d();
     });
+    $('boxList').addEventListener('click', function (e) {
+      var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
+      st.selBox = +i; st.ed.sel = null; showSel(); renderBoxes(); redraw2d();
+    });
+    var bins = $('boxForm').querySelectorAll('input');
+    for (var bq = 0; bq < bins.length; bq++) bins[bq].addEventListener('change', boxFromForm);
+    $('boxAdd').addEventListener('click', function () {
+      st.ed.begin(); st.selBox = st.ed.addBox(Math.min(st.model.L * 0.2, 30), 15); heavy();
+    });
+    $('boxDel').addEventListener('click', function () {
+      if (st.selBox === null || st.selBox === undefined) return;
+      st.ed.begin(); st.ed.deleteBox(st.selBox); st.selBox = null; heavy();
+    });
     $('followChk').addEventListener('change', function (e) { st.follow = e.target.checked; });
     $('curvBtn').addEventListener('click', function () { st.showCurv = !st.showCurv; $('curvBtn').classList.toggle('on', st.showCurv); if (st.model) redraw2d(); });
     $('origBtn').addEventListener('click', function () { st.showOrig = !st.showOrig; $('origBtn').classList.toggle('on', st.showOrig); if (st.model) redraw2d(); });
@@ -635,6 +745,10 @@
       var step = (e.shiftKey ? 1 : 0.1) / 10, d = null;   // 0.1 мм, с Shift — 1 мм
       if (k === 'ArrowLeft') d = [-step, 0]; else if (k === 'ArrowRight') d = [step, 0];
       else if (k === 'ArrowUp') d = [0, step]; else if (k === 'ArrowDown') d = [0, -step];
+      if (d && st.selBox !== null && st.selBox !== undefined && !st.ed.sel) {
+        e.preventDefault(); var ob = st.board.boxes[st.selBox];
+        st.ed.begin(); st.ed.boxSet(st.selBox, { x: ob.x + d[0], y: ob.y + (ob.y < 0 ? -d[1] : d[1]) }); heavy(); return;
+      }
       if (d && st.ed.sel) {
         e.preventDefault();
         if (st.ed.sel.key === 'otl' && st.drag === null && st.lastSign === -1) d[1] = -d[1];

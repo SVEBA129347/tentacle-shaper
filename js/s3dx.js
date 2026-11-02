@@ -86,6 +86,37 @@
     return c;
   }
 
+  // ---------- вставки (Box_k): размеры в см, как в файле ----------
+  function pt3(node, tag) { var n = path(node, tag + '/Point3d'); return n ? [num(n, 'x'), num(n, 'y'), num(n, 'z')] : null; }
+  function readBox(w) {
+    var bx = kid(w, 'Box') || w;
+    var pc = pt3(bx, 'PointCenter') || pt3(bx, 'Ref_point') || [0, 0, 0];
+    return {
+      wrap: w, node: bx, name: text(bx, 'Name') || '',
+      len: num(bx, 'Length'), wid: num(bx, 'Width'), depth: num(bx, 'Height'),
+      ang: num(bx, 'AngleOz') || 0, x: pc[0], y: pc[1], z: pc[2],
+      even: text(bx, 'Even') === '1', central: text(bx, 'Central') === '1',
+      face: parseInt(text(bx, 'Face'), 10) || 0, cut: text(bx, 'CutCNC') === '1',
+      dx: num(bx, 'PointRefDx') || 0, dy: num(bx, 'PointRefDy') || 0
+    };
+  }
+  TS.readBox = readBox;
+  // точки «Ref. point» (центр задней кромки), «PointRef» и «PointCenter» — из центра, длины и угла
+  function writeBox(b) {
+    var bx = b.node, h = b.len / 2, a = b.ang, ca = Math.cos(a), sa = Math.sin(a);
+    var rear = [b.x - h * ca, b.y + h * sa];
+    var pref = [rear[0] - b.dx * ca - b.dy * sa, rear[1] + b.dx * sa - b.dy * ca];
+    function setPt(tag, p) {
+      var n = path(bx, tag + '/Point3d'); if (!n) return;
+      ['x', 'y'].forEach(function (t, k) { var e = kid(n, t); if (e && Math.abs(parseFloat(e.textContent) - p[k]) > 5e-7) e.textContent = f6(p[k]); });
+    }
+    setPt('PointCenter', [b.x, b.y]); setPt('Ref_point', rear); setPt('PointRef', pref);
+    function setNum(tag, v, d) { var e = kid(bx, tag); if (e && isFinite(v) && Math.abs(parseFloat(e.textContent) - v) > Math.pow(10, -d) / 2) e.textContent = v.toFixed(d); }
+    setNum('Length', b.len, 3); setNum('Width', b.wid, 3); setNum('Height', b.depth, 3); setNum('AngleOz', b.ang, 4);
+    var ev = kid(bx, 'Even'); if (ev && (ev.textContent === '1') !== b.even) ev.textContent = b.even ? '1' : '0';
+    var cc = kid(bx, 'CutCNC'); if (cc && (cc.textContent === '1') !== b.cut) cc.textContent = b.cut ? '1' : '0';
+  }
+
   // ---------- разбор файла ----------
   // buf: ArrayBuffer содержимого .s3dx
   TS.parseS3dx = function (buf, fileName) {
@@ -133,6 +164,12 @@
     for (var k = 0; k < ns; k++) {
       var w = kid(B, 'Couples_' + k), c = readCurve(w);
       if (c) { c.wrap = w; board.slices.push(c); }
+    }
+    // вставки (пробки плавников и т. п.)
+    board.boxes = [];
+    for (var bi = 0; bi < 64; bi++) {
+      var bw = kid(B, 'Box_' + bi); if (!bw) continue;
+      board.boxes.push(readBox(bw));
     }
     // где в файле стоят сечения: перед каким узлом вставлять при записи
     var lastW = board.slices.length ? board.slices[board.slices.length - 1].wrap : null;
@@ -243,6 +280,23 @@
     Object.keys(board.top).forEach(function (k) { curves.push(board.top[k].curve); });
     Object.keys(board.side).forEach(function (k) { curves.push(board.side[k].curve); });
     curves.forEach(writeCurve);
+    // вставки: список Box_k по текущему набору (добавленные — копии существующих)
+    var allB = [];
+    for (var cb = B.firstElementChild; cb; cb = cb.nextElementSibling) if (/^Box_\d+$/.test(cb.tagName)) allB.push(cb);
+    var chB = allB.length !== board.boxes.length || board.boxes.some(function (bx, i) { return bx.wrap !== allB[i]; });
+    if (chB) {
+      var anchorB = allB.length ? allB[allB.length - 1].nextSibling : null;
+      var wsB = allB[0] && allB[0].previousSibling && allB[0].previousSibling.nodeType === 3 ? allB[0].previousSibling.textContent : '\n\t\t';
+      allB.forEach(function (n) { if (n.previousSibling && n.previousSibling.nodeType === 3) B.removeChild(n.previousSibling); B.removeChild(n); });
+      board.boxes.forEach(function (bx, i) {
+        var w = bx.wrap;
+        if (w.tagName !== 'Box_' + i) { var nw = board.doc.createElement('Box_' + i); while (w.firstChild) nw.appendChild(w.firstChild); bx.wrap = nw; w = nw; }
+        if (anchorB && anchorB.parentNode === B) { B.insertBefore(board.doc.createTextNode(wsB), anchorB); B.insertBefore(w, anchorB); }
+        else { B.appendChild(board.doc.createTextNode(wsB)); B.appendChild(w); }
+      });
+      var nbb = kid(B, 'NbBoxesFastLoad'); if (nbb) nbb.textContent = String(board.boxes.length);
+    }
+    board.boxes.forEach(function (bx) { if (bx.changed) writeBox(bx); });
     Object.keys(fields || {}).forEach(function (k) {
       var n = kid(B, k);
       if (n && isFinite(fields[k]) && Math.abs(parseFloat(n.textContent) - fields[k]) > 5e-4) n.textContent = fields[k].toFixed(3);

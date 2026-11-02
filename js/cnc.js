@@ -429,23 +429,19 @@
 
   // ---------- вставки (пробки плавников) из файла: только те, что фрезеруются на дне ----------
   function boxes(board) {
-    var out = [], B = board.B;
-    for (var i = 0; i < 64; i++) {
-      var n = B.getElementsByTagName('Box_' + i)[0]; if (!n) continue;
-      var bx = n.getElementsByTagName('Box')[0] || n;
-      if (num(bx, 'CutCNC') !== 1 || num(bx, 'Face') !== 1) continue;
-      var pc = bx.getElementsByTagName('PointCenter')[0];
-      var x = num(pc, 'x') * 10, y = num(pc, 'y') * 10, ang = or(num(bx, 'AngleOz'), 0);
-      var b = { name: (bx.getElementsByTagName('Name')[0] || {}).textContent || '', len: num(bx, 'Length') * 10,
-                wid: num(bx, 'Width') * 10, depth: num(bx, 'Height') * 10, places: [] };
-      if (num(bx, 'Central') === 1 || Math.abs(y) < 0.01) b.places.push({ x: x, y: 0, ang: 0 });
+    var out = [];
+    (board.boxes || []).forEach(function (bx) {
+      if (!bx.cut || bx.face !== 1) return;
+      var x = bx.x * 10, y = bx.y * 10, ang = bx.ang || 0;
+      var b = { name: bx.name, len: bx.len * 10, wid: bx.wid * 10, depth: bx.depth * 10, places: [] };
+      if (bx.central || Math.abs(y) < 0.01) b.places.push({ x: x, y: 0, ang: 0 });
       else {
         // развал: передний конец ближе к оси
         b.places.push({ x: x, y: Math.abs(y), ang: -Math.abs(ang) });
-        if (num(bx, 'Even') === 1) b.places.push({ x: x, y: -Math.abs(y), ang: Math.abs(ang) });
+        if (bx.even) b.places.push({ x: x, y: -Math.abs(y), ang: Math.abs(ang) });
       }
       if (isFinite(b.len) && isFinite(b.wid) && isFinite(b.depth)) out.push(b);
-    }
+    });
     return out;
   }
   TS.cncBoxes = boxes;
