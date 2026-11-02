@@ -78,6 +78,51 @@
       '</article>';
   }
 
+
+  // раздел о Тони Эдвардсе — автор заслуживает, чтобы о нём знали
+  var TONY = {
+    title: { ru: 'Тони Эдвардс — человек, который придумал Captain Goodvibes', en: 'Tony Edwards — the man who created Captain Goodvibes' },
+    intro: {
+      ru: 'В Австралии его знает каждый серфер старше сорока, а в России — почти никто. Исправляем.',
+      en: 'Every Australian surfer over forty knows him; in Russia almost nobody does. Let\'s fix that.'
+    },
+    facts: {
+      ru: [
+        ['1944', 'Родился в Стратфилде, пригороде Сиднея. Детство провёл в Мельбурне, в 1957-м семья переехала в Сидней.'],
+        ['до 1973', 'Учился на архитектора, потом много лет работал чертёжником. Рисовал карикатуры прямо на работе — их заметил Джон Барнс, редактор серф-журнала Tracks, и позвал к себе. Через пару месяцев Тони ушёл с работы.'],
+        ['1973–1981', 'Captain Goodvibes выходит в Tracks каждый месяц. Имя герою придумала жена Тони, Салли. Сначала он сам не верил в персонажа — продолжить его убедили письма читателей.'],
+        ['1970-е', 'Свин становится звездой: книги, пластинка «Mutants of Modern Disco» (1978), фильм «Hot to Trot» (1977), вставка в «Crystal Voyager» (1973), серф-сводки на радио Double J — голосом Goodvibes говорил сам Тони, пока врачи не велели беречь связки.'],
+        ['1981', 'Тони закрывает комикс: по его словам, персонаж стал «индустриальным», а вдохновение иссякло. Честный поступок — не доить героя.'],
+        ['1986–2000-е', 'Карикатуры для National Times, потом для Sun-Herald. В 1998 году — премия Уокли (Walkley Award), главная журналистская награда Австралии, за лучшую иллюстрацию.'],
+        ['2011', 'Вышел сборник всех выпусков: «Captain Goodvibes — My Life As A Pork Chop, 1973–1981» (Flying Pineapple Media, составители Тони Эдвардс и Шон Доэрти). Если увидите — берите.'],
+        ['сейчас', 'Больше сорока лет пишет картины — архитектура, пейзажи, море — в мастерской в Авалоне, на северных пляжах Сиднея. Выставка «By The Way» в Музее Сиднея (2013).']
+      ],
+      en: [
+        ['1944', 'Born in Strathfield, Sydney. Spent his childhood in Melbourne; the family moved back to Sydney in 1957.'],
+        ['before 1973', 'Trained as an architect, then worked as a draftsman for years. He doodled cartoons at work; John Barnes, editor of the surf magazine Tracks, liked them and brought him on. Within a couple of months Tony quit his job.'],
+        ['1973–1981', 'Captain Goodvibes runs in Tracks every month. Tony\'s wife Sally named the character. At first Tony himself doubted the pig — readers\' letters convinced him to keep going.'],
+        ['1970s', 'The pig becomes a star: books, the record "Mutants of Modern Disco" (1978), the film "Hot to Trot" (1977), a cameo in "Crystal Voyager" (1973), surf reports on Double J radio voiced by Tony himself — until doctors told him to save his vocal cords.'],
+        ['1981', 'Tony ends the strip: he felt the character had become "industrial" and the ideas had run dry. An honest move — not milking the hero.'],
+        ['1986–2000s', 'Cartoons for the National Times, then the Sun-Herald. In 1998 he won a Walkley Award, Australia\'s top journalism prize, for best artwork.'],
+        ['2011', 'The complete strip is collected in "Captain Goodvibes — My Life As A Pork Chop, 1973–1981" (Flying Pineapple Media, edited by Tony Edwards and Sean Doherty). If you see it, grab it.'],
+        ['now', 'For four decades he has been painting — architecture, landscapes, the sea — in a studio in Avalon on Sydney\'s Northern Beaches. Exhibition "By The Way" at the Museum of Sydney (2013).']
+      ]
+    },
+    links: [
+      ['Tracks: In Search Of Goodvibes (2023)', 'https://tracksmag.com.au/best-features-of-the-year-in-search-of-goodvibes'],
+      ['Tracks Podcast: Tony Edwards', 'https://tracksmag.com.au/tracks-podcast-with-captain-goodvibes-creator-tony-edwards'],
+      ['Pittwater Online News: Tony Edwards', 'https://www.pittwateronlinenews.com/tony-edwards-profile.php'],
+      ['Wikipedia: Tony Edwards', 'https://en.wikipedia.org/wiki/Tony_Edwards']
+    ]
+  };
+  function tonyBlock() {
+    var en = TS.lang() === 'en';
+    return '<section class="cu-tony"><h2>' + esc(L(TONY.title)) + '</h2><p class="lead">' + esc(L(TONY.intro)) + '</p>' +
+      '<ol class="cu-time">' + TONY.facts[en ? 'en' : 'ru'].map(function (f) { return '<li><b>' + esc(f[0]) + '</b><span>' + esc(f[1]) + '</span></li>'; }).join('') + '</ol>' +
+      '<div class="cu-links">' + TONY.links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + ' ↗</a>'; }).join('') + '</div>' +
+      '<p class="small">' + (en ? 'Text — our own retelling from the sources above. Captain Goodvibes © Tony Edwards; we do not reproduce his drawings — look for them in the book and in Tracks.' : 'Текст — наш пересказ по источникам выше. Captain Goodvibes © Тони Эдвардс; его рисунки мы не перепечатываем — ищите их в книге и в Tracks.') + '</p></section>';
+  }
+
   function render() {
     var el = $('culturePage'); if (!el) return;
     el.innerHTML =
@@ -86,6 +131,7 @@
         '<p class="lead">' + TS.t('cuLead') + '</p></div></div>' +
       '<div class="cu-book"><div class="cu-photo" id="cuPhoto"><span>' + TS.t('cuPhoto') + '</span></div>' +
         '<div><h2>' + TS.t('cuStoryT') + '</h2><p>' + TS.t('cuStory') + '</p></div></div>' +
+      tonyBlock() +
       '<div class="cu-head"><h2>' + TS.t('cuColT') + '</h2><div class="fin-btns"><a class="btnlink primary" href="' + suggestUrl() + '" target="_blank" rel="noopener">' + TS.t('cuAdd') + '</a><button id="cuCopy">' + TS.t('finCopy') + '</button></div></div>' +
       '<p class="small">' + TS.t('cuRules') + '</p>' +
       '<div class="cu-grid">' + ITEMS.map(card).join('') + '</div>' +

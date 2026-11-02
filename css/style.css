@@ -323,3 +323,10 @@ body:not([data-tab="culture"]) .only-culture { display: none; }
 a.btnlink { display: inline-block; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); text-decoration: none; color: #000; font-size: 14px; }
 a.btnlink.primary { background: var(--brand); border-color: var(--brand-line); font-weight: 600; }
 @media (max-width: 760px) { .cu-book { grid-template-columns: 1fr; } .cu-hero { flex-direction: column; align-items: flex-start; } }
+.cu-tony { background: var(--brand); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+.cu-tony h2 { margin: 0 0 6px; font-size: 22px; }
+.cu-tony .lead { margin: 0 0 14px; font-size: 15px; }
+.cu-time { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
+.cu-time li { display: grid; grid-template-columns: 120px 1fr; gap: 14px; background: rgba(255,255,255,.55); border-radius: 8px; padding: 8px 12px; line-height: 1.5; font-size: 14px; }
+.cu-tony .small { color: #4a4500; margin: 10px 0 0; }
+@media (max-width: 760px) { .cu-time li { grid-template-columns: 1fr; gap: 2px; } }
