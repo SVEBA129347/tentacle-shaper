@@ -44,6 +44,7 @@
   <nav class="tabs">
     <button class="tab on" data-tab="design" data-i18n="design">Проектирование</button>
     <button class="tab" data-tab="3d" data-i18n="view3d">3D</button>
+    <button class="tab" data-tab="hydro" data-i18n="hydro">Вода</button>
     <button class="tab" data-tab="cnc" data-i18n="cnc">CNC</button>
   </nav>
   <div class="lang"><button data-l="ru">RU</button><button data-l="en">EN</button></div>
@@ -80,7 +81,13 @@
         <canvas id="cCncTop"></canvas></div>
       <div class="pane"><div class="ptitle" data-i18n="cSideView">Доска в бланке, вид сбоку</div><canvas id="cCncSide"></canvas></div>
     </div>
+    <div class="hydroviews only-hydro"><div class="pane"><canvas id="cHydro"></canvas></div></div>
     <aside class="side-panel">
+      <div class="only-hydro">
+        <div class="warn" data-i18n="hyWarn"></div>
+        <div id="hyOut"></div>
+        <div id="hyForm"></div>
+      </div>
       <div class="only-cnc">
         <div class="warn" data-i18n="cWarn"></div>
         <div class="cncbtns"><button id="cCalc" class="primary" data-i18n="cCalc">Рассчитать</button>
@@ -242,6 +249,7 @@
 <script src="js/smart.js"></script>
 <script src="js/actions.js"></script>
 <script src="js/print.js"></script>
+<script src="js/hydro.js"></script>
 <script src="js/cnc.js"></script>
 <script src="js/cncui.js"></script>
 <script src="js/app.js"></script>

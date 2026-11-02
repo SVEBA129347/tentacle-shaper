@@ -933,6 +933,7 @@
     if (t === 'design') { vTop.fitted = vSide.fitted = vSlice.fitted = false; if (st.model) redraw2d(); }
     if (t === '3d' && st.model && !st.viewed3d) { st.viewed3d = true; v3.resetView(); }
     if (t === 'cnc' && st.model) TS.cncUI.show();
+    if (t === 'hydro' && st.model) TS.hydroUI.show();
   }
 
   function init() {
@@ -981,6 +982,7 @@
     TS.smartUI.init();
     TS.actionsUI.init();
     TS.printUI.init();
+    TS.hydroUI.init();
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
@@ -1069,7 +1071,7 @@
     for (var j = 0; j < lb.length; j++) lb[j].addEventListener('click', function (e) {
       TS.setLang(e.currentTarget.getAttribute('data-l')); markLang();
       if (st.model) { renderDims(); setSecX(st.secX); showSel(); }
-      TS.cncUI.lang();
+      TS.cncUI.lang(); TS.hydroUI.lang();
     });
     markLang();
 
