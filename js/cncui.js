@@ -26,7 +26,8 @@
         h += '<label><span data-i18n="' + f[1] + '">' + TS.t(f[1]) + '</span><input data-k="' + f[0] + '" type="number" step="' + f[2] + '"></label>';
       });
       if (g[0] === 'cncPlace') h += '<div class="formbtns"><button id="cLevel" data-i18n="cLevel">' + TS.t('cLevel') + '</button><button id="cCenter" data-i18n="cCenter">' + TS.t('cCenter') + '</button></div>';
-      if (g[0] === 'cncLines') h += '<label class="chk"><input data-k="stringer" type="checkbox"> <span data-i18n="cStringer">' + TS.t('cStringer') + '</span></label>' +
+      if (g[0] === 'cncLines') h += '<label class="chk"><input data-k="skim" type="checkbox"> <span data-i18n="cSkim">' + TS.t('cSkim') + '</span></label>' +
+        '<label class="chk"><input data-k="stringer" type="checkbox"> <span data-i18n="cStringer">' + TS.t('cStringer') + '</span></label>' +
         '<label class="chk"><input data-k="endCut" type="checkbox"> <span data-i18n="cEndCut">' + TS.t('cEndCut') + '</span></label>';
       if (g[0] === 'cncOrder') h += '<label class="chk"><input data-k="startNose" type="checkbox"> <span data-i18n="cStartNose">' + TS.t('cStartNose') + '</span></label>';
       if (g[0] === 'cncRough') h += '<label class="chk"><input data-k="rough" type="checkbox"> <span data-i18n="cRough">' + TS.t('cRough') + '</span></label>' +
@@ -70,7 +71,7 @@
     var m = TS.state.model; if (!m) return;
     var t0 = Date.now();
     U.res.deck = TS.cncSide(m, U.s, 'deck');
-    U.res.bot = TS.cncSide(m, U.s, 'bot');
+    U.res.bot = U.s.skim ? null : TS.cncSide(m, U.s, 'bot');
     U.ms = Date.now() - t0; U.stale = false;
     renderInfo(); buildSim(); redraw();
   }
@@ -153,6 +154,7 @@
     y += 3;
     if (!U.stale && U.res.deck) {
       ['deck', 'bot'].forEach(function (side) {
+        if (!U.res[side]) return;
         var q = stats(U.res[side]);
         out += T(M, y, TS.t(side === 'deck' ? 'cDeck' : 'cBot'), 3.3, true) + T(M + 62, y, q.lines + ' ' + TS.t('cPasses') + ' · ' + q.n + ' ' + TS.t('cPoints') + ' · ' + fmt(q.len / 1000, 1) + ' ' + TS.t('cMeters') + ' ≈ ' + fmt(q.len / s.feed, 0) + ' ' + TS.t('cMin') +
           ' · X ' + fmt(q.minX, 0) + '…' + fmt(q.maxX, 0) + ' · Y ' + fmt(q.minY, 0) + '…' + fmt(q.maxY, 0) + ' · Z ' + fmt(q.minZ, 1) + '…' + fmt(q.maxZ, 1), 3.1);
@@ -196,6 +198,7 @@
     if (s.boardLo < 0 || s.boardHi > s.Tb) h += '<div class="warn">' + TS.t('cOutOfBlank') + '</div>';
     if (!U.stale && U.res.deck) {
       ['deck', 'bot'].forEach(function (side) {
+        if (!U.res[side]) return;
         var st = stats(U.res[side]);
         h += '<div class="cstat"><b>' + TS.t(side === 'deck' ? 'cDeck' : 'cBot') + '</b>: ' + st.lines + ' ' + TS.t('cPasses') + ', ' +
           st.n + ' ' + TS.t('cPoints') + ', ' + fmt(st.len / 1000, 1) + ' ' + TS.t('cMeters') + ' ≈ ' + fmt(st.len / s.feed, 0) + ' ' + TS.t('cMin') +
@@ -203,7 +206,11 @@
       });
     } else h += '<div class="cstat muted">' + TS.t('cNotYet') + '</div>';
     $('cncInfo').innerHTML = h;
-    $('cSaveDeck').disabled = $('cSaveBot').disabled = U.stale;
+    $('cSaveDeck').disabled = U.stale;
+    $('cSaveBot').disabled = U.stale || !U.res.bot;
+    $('cSaveBot').hidden = !!s.skim;
+    var bb = document.querySelector('.cncside [data-s="bot"]'); if (bb) bb.disabled = !!s.skim;
+    if (s.skim && U.side === 'bot') { U.side = 'deck'; var sb = document.querySelectorAll('.cncside button'); for (var i = 0; i < sb.length; i++) sb[i].classList.toggle('on', sb[i].getAttribute('data-s') === 'deck'); }
   }
   function tr(k, v) { return '<tr><td>' + k + '</td><td class="v">' + v + '</td></tr>'; }
 

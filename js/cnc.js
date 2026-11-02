@@ -40,6 +40,10 @@
       startNose: false, mTail: 0, mNose: 0, endX: 0, endY: 0, endZ: 0
     };
     if (s.Yc <= 0) s.Yc = 600;
+    // ским: дно плоское (рокер низа меньше 1 мм) — режется только дек
+    var zlo = Infinity, zhi = -Infinity;
+    for (var q = 0; q <= 200; q++) { var zq = model.zb(model.L * q / 200); zlo = Math.min(zlo, zq); zhi = Math.max(zhi, zq); }
+    s.skim = (zhi - zlo) * 10 < 1;
     // наклон по умолчанию: концы дека на одной высоте (как ставит Shape3D, ±0.03°)
     var L = model.L * 10, zt = model.zd(0) * 10, zn = model.zd(model.L) * 10;
     s.tilt = Math.atan2(zn - zt, L) * 180 / Math.PI;
