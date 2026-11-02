@@ -11,14 +11,15 @@
   function cfITTC(re) { return re > 1e3 ? 0.075 / Math.pow(Math.log(re) / Math.LN10 - 2, 2) : 0.01; }
 
   // образцы — условные, не копии чьих-то крыльев
+  // пропорции — как у серийных крыльев (серф: ~1300 см², размах 950, удлинение ~7, стаб ~200 см², фюзеляж ~660 мм)
   var PRESETS = {
-    surf: { span: 800, cr: 200, ct: 70, sweep: 40, naca: '2412' },
-    wake: { span: 600, cr: 180, ct: 60, sweep: 30, naca: '4412' },
-    pump: { span: 1000, cr: 150, ct: 50, sweep: 50, naca: '2412' },
-    big:  { span: 900, cr: 260, ct: 90, sweep: 40, naca: '4412' }
+    surf: { span: 950, cr: 188, ct: 60, sweep: 60, naca: '2412', stab: 195, fuse: 660 },
+    wake: { span: 700, cr: 180, ct: 55, sweep: 40, naca: '4412', stab: 180, fuse: 600 },
+    pump: { span: 1100, cr: 125, ct: 40, sweep: 70, naca: '2410', stab: 150, fuse: 700 },
+    big:  { span: 900, cr: 275, ct: 90, sweep: 50, naca: '4412', stab: 240, fuse: 660 }
   };
-  var P = { preset: 'surf', span: 800, cr: 200, ct: 70, sweep: 40, naca: '2412', mass: 80, board: 6, kmh: 18,
-            stab: 200, mastDepth: 500, mastChord: 120, mastT: 13, sea: false, clmax: 1.2 };
+  var P = { preset: 'surf', span: 950, cr: 188, ct: 60, sweep: 60, naca: '2412', mass: 80, board: 6, kmh: 18,
+            stab: 195, fuse: 660, mastDepth: 600, mastChord: 125, mastT: 15, sea: false, clmax: 1.2 };
 
   // ---------- профиль NACA 4 цифры ----------
   function naca(code) {
@@ -81,34 +82,95 @@
   // хорда (мм) на доле полуразмаха u: плавно убывает от корня к концу
   function chordAt(u) { return P.ct + (P.cr - P.ct) * (1 - Math.pow(Math.min(1, u), 1.5)); }
 
-  // ---------- рисунки: план крыла и профиль ----------
-  function planform(w) {
-    var b = P.span, cr = P.cr, ct = P.ct, sw = P.sweep, half = b / 2, pts = [], N = 40, i;
-    // передняя кромка: от корня (0) к концу (sweep), задняя — от cr к sweep+ct; концы скруглены
-    function le(y) { var u = y / half; return sw * Math.pow(u, 1.6); }
-    function ch(y) { var u = y / half; return chordAt(u) * Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, u - 0.9) / 0.1, 2))); }
-    for (i = 0; i <= N; i++) { var y = half * i / N; pts.push([y, le(y)]); }
-    for (i = N; i >= 0; i--) { var y2 = half * i / N, c = ch(y2); pts.push([y2, le(y2) + Math.max(c, i === N ? 0 : 1)]); }
-    return pts;   // половина: [y (размах), x (по потоку)], мм
+  // стабилизатор: удлинение ~7, та же форма хорды, что у крыла
+  function stabGeom() { var S = P.stab * 100, span = Math.sqrt(S * 7), mean = S / span; return { span: span, cr: mean * 1.45, ct: mean * 0.45 }; }
+  function halfPlan(span, cr, ct, sw) {
+    var half = span / 2, pts = [], N = 40, i;
+    function cAt(u) { return ct + (cr - ct) * (1 - Math.pow(Math.min(1, u), 1.5)); }
+    function le(y) { return sw * Math.pow(y / half, 1.6); }
+    function ch(y) { var u = y / half; return cAt(u) * Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, u - 0.8) / 0.2, 2))); }
+    // скруглённый конец: хорда сходится к своей середине
+    for (i = 0; i <= N; i++) { var y1 = half * i / N, u1 = y1 / half; pts.push([y1, le(y1) + (cAt(u1) - ch(y1)) / 2]); }
+    for (i = N - 1; i >= 0; i--) { var y = half * i / N, u = y / half; pts.push([y, le(y) + (cAt(u) + ch(y)) / 2]); }
+    return pts;
   }
+  function profPts(n, chord, x0, y0, sc, ang) {
+    var ca = Math.cos(ang), sa = Math.sin(ang);
+    return profile(n, 50).map(function (p) { var x = p[0] * chord, y = p[1] * chord; return (x0 + (x * ca + y * sa) * sc).toFixed(1) + ',' + (y0 + (x * sa - y * ca) * sc).toFixed(1); }).join(' ');
+  }
+  var DEFS = '<defs><linearGradient id="foY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff35a"/><stop offset="1" stop-color="#e2d400"/></linearGradient>' +
+    '<linearGradient id="foWat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6d5de"/><stop offset="1" stop-color="#3f8fa1"/></linearGradient>' +
+    '<marker id="foAr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b6b63"/></marker></defs>';
+
   function drawSvg(w) {
-    var half = planform(w), Wd = 640, Hd = 250, pad = 24;
-    var b = P.span, xmax = 0; half.forEach(function (p) { xmax = Math.max(xmax, p[1]); });
-    var sc = Math.min((Wd - 2 * pad) / b, (Hd - 2 * pad - 40) / (xmax + 10)), cx = Wd / 2, y0 = pad + 30;
-    function pt(p, sg) { return (cx + sg * p[0] * sc).toFixed(1) + ',' + (y0 + p[1] * sc).toFixed(1); }
-    var full = half.map(function (p) { return pt(p, 1); }).concat(half.slice().reverse().map(function (p) { return pt(p, -1); }));
-    var s = '<svg viewBox="0 0 ' + Wd + ' ' + Hd + '" class="foil-svg">';
-    s += '<text x="' + pad + '" y="' + (pad + 4) + '" class="cap">' + TS.t('foPlan') + ' · ' + f(w.S * 1e4, 0) + ' ' + TS.t('hyCm2') + ' · AR ' + f(w.AR, 1) + '</text>';
-    s += '<polygon points="' + full.join(' ') + '" fill="#f2e400" stroke="#000" stroke-width="2" stroke-linejoin="round"/>';
-    s += '<rect x="' + (cx - 7) + '" y="' + (y0 + P.cr * sc * 0.25 - 4) + '" width="14" height="' + (P.mastChord * sc) + '" fill="#000" opacity=".35"/>';
-    s += '<line x1="' + (cx - b / 2 * sc) + '" x2="' + (cx + b / 2 * sc) + '" y1="' + (y0 + xmax * sc + 22) + '" y2="' + (y0 + xmax * sc + 22) + '" stroke="#6b6b63"/>';
-    s += '<text x="' + cx + '" y="' + (y0 + xmax * sc + 38) + '" text-anchor="middle" class="cap">' + TS.t('foSpan') + ' ' + P.span + ' ' + TS.t('mm') + '</text>';
-    // профиль
-    var pr = profile(w.n, 70), sx = Wd - 2 * pad;
-    s += '</svg><svg viewBox="0 0 ' + Wd + ' 150" class="foil-svg">';
+    var Wd = 640, pad = 24, sg = stabGeom(), n0 = naca('0010');
+    // ---- вид сбоку: доска над водой, мачта, фюзеляж, крылья ----
+    var H1 = 330, boardL = 1250, above = 160, mastL = P.mastDepth + above;
+    var sc = Math.min((Wd - 2 * pad - 80) / boardL, (H1 - 46 - 40) / (90 + mastL + P.cr * 0.25));
+    var bx = (Wd - boardL * sc) / 2, xm = bx + boardL * 0.42 * sc;                               // мачта — 42 % от носа
+    var yB = 46, yW = yB + (90 + above) * sc, yF = yB + (90 + mastL) * sc;
+    var s = '<svg viewBox="0 0 ' + Wd + ' ' + H1 + '" class="foil-svg">' + DEFS;
+    s += '<text x="' + pad + '" y="20" class="cap">' + TS.t('foSide') + '</text>';
+    s += '<rect x="0" y="' + yW + '" width="' + Wd + '" height="' + (H1 - yW) + '" fill="url(#foWat)"/>';
+    s += '<path d="M0 ' + yW + ' C 160 ' + (yW - 3) + ', 320 ' + (yW + 3) + ', 480 ' + yW + ' S 600 ' + (yW - 2) + ', 640 ' + yW + '" fill="none" stroke="#e9f6f8" stroke-width="2"/>';
+    // доска: нос слева
+    var bw = boardL * sc, bt = 90 * sc;
+    s += '<path d="M' + bx + ' ' + (yB + bt * 0.2) + ' C ' + (bx + bw * 0.08) + ' ' + (yB - bt * 0.35) + ', ' + (bx + bw * 0.2) + ' ' + yB + ', ' + (bx + bw * 0.35) + ' ' + yB +
+         ' L ' + (bx + bw) + ' ' + yB + ' L ' + (bx + bw) + ' ' + (yB + bt) + ' L ' + (bx + bw * 0.3) + ' ' + (yB + bt) +
+         ' C ' + (bx + bw * 0.12) + ' ' + (yB + bt) + ', ' + (bx + bw * 0.04) + ' ' + (yB + bt * 0.75) + ', ' + bx + ' ' + (yB + bt * 0.2) + ' Z" fill="url(#foY)" stroke="#000" stroke-width="2" stroke-linejoin="round"/>';
+    // мачта
+    var mc = P.mastChord * sc;
+    s += '<rect x="' + (xm - mc / 2) + '" y="' + (yB + bt) + '" width="' + mc + '" height="' + (yF - yB - bt) + '" rx="' + Math.min(4, mc / 3) + '" fill="#2a2a2a"/>';
+    // фюзеляж: спереди мачты ~35 %
+    var fl = P.fuse * sc, fx0 = xm - fl * 0.36, fx1 = fx0 + fl;
+    s += '<rect x="' + fx0 + '" y="' + (yF - 3) + '" width="' + fl + '" height="7" rx="3.5" fill="#2a2a2a"/>';
+    // переднее крыло: профиль корня, передняя кромка у носа фюзеляжа, угол установки ~2°
+    s += '<polygon points="' + profPts(w.n, P.cr, fx0 - P.cr * 0.08 * sc / sc, yF + 2, sc, 2 * Math.PI / 180) + '" fill="#161616"/>';
+    // стабилизатор: тонкий симметричный, у хвоста фюзеляжа, с небольшим отрицательным углом
+    s += '<polygon points="' + profPts(n0, sg.cr, fx1 - sg.cr * sc - 2, yF + 1, sc, -1.5 * Math.PI / 180) + '" fill="#161616"/>';
+    // размеры
+    s += '<line x1="' + (xm + mc / 2 + 10) + '" x2="' + (xm + mc / 2 + 10) + '" y1="' + (yW + 2) + '" y2="' + (yF - 4) + '" stroke="#fff" stroke-width="1.2" marker-start="url(#foAr)" marker-end="url(#foAr)"/>';
+    s += '<text x="' + (xm + mc / 2 + 16) + '" y="' + ((yW + yF) / 2 + 4) + '" fill="#fff">' + TS.t('foMastIn') + ' ' + P.mastDepth + '</text>';
+    s += '<line x1="' + (bx + bw + 6) + '" x2="' + (bx + bw + 40) + '" y1="' + (yB + bt / 2) + '" y2="' + (yB + bt / 2) + '" stroke="#6b6b63" stroke-width="1.5" marker-start="url(#foAr)"/>';
+    s += '<text x="' + (bx + bw - 4) + '" y="' + (yB - 8) + '" text-anchor="end">' + TS.t('foDir') + '</text>';
+    s += '</svg>';
+
+    // ---- вид сверху: крыло, фюзеляж, стабилизатор ----
+    var half = halfPlan(P.span, P.cr, P.ct, P.sweep), hs = halfPlan(sg.span, sg.cr, sg.ct, P.sweep * 0.3);
+    var xmax = 0; half.forEach(function (p) { xmax = Math.max(xmax, p[1]); });
+    var lenAll = Math.max(P.fuse * 0.64 + P.cr * 0.08, xmax) + P.cr * 0.1 + 20;
+    var H2 = 360, sc2 = Math.min((Wd - 2 * pad) / P.span, (H2 - 100) / (P.fuse + 40)), cx = Wd / 2, y0 = 54;
+    function pt(p, sgn, dy) { return (cx + sgn * p[0] * sc2).toFixed(1) + ',' + (y0 + (p[1] + (dy || 0)) * sc2).toFixed(1); }
+    function full(h, dy) { return h.map(function (p) { return pt(p, 1, dy); }).concat(h.slice().reverse().map(function (p) { return pt(p, -1, dy); })).join(' '); }
+    var stabY = P.fuse - sg.cr - P.cr * 0.0;                                  // от передней кромки крыла
+    s += '<svg viewBox="0 0 ' + Wd + ' ' + H2 + '" class="foil-svg">' + DEFS;
+    s += '<text x="' + pad + '" y="22" class="cap">' + TS.t('foPlan') + ' · ' + f(w.S * 1e4, 0) + ' ' + TS.t('hyCm2') + ' · ' + TS.t('foAR') + ' ' + f(w.AR, 1) + ' · ' + TS.t('foStabS') + ' ' + P.stab + ' ' + TS.t('hyCm2') + '</text>';
+    s += '<rect x="' + (cx - 12 * sc2 / sc2 * 0.5 - 4) + '" y="' + (y0 - 8 * sc2) + '" width="8" height="' + ((P.fuse + 8) * sc2) + '" rx="4" fill="#2a2a2a"/>';
+    s += '<polygon points="' + full(half) + '" fill="url(#foY)" stroke="#000" stroke-width="2" stroke-linejoin="round"/>';
+    s += '<polygon points="' + full(hs, stabY) + '" fill="url(#foY)" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/>';
+    s += '<ellipse cx="' + cx + '" cy="' + (y0 + (P.fuse * 0.36 - P.mastChord / 2) * sc2) + '" rx="' + Math.max(3, P.mastChord * P.mastT / 200 * sc2) + '" ry="' + (P.mastChord / 2 * sc2) + '" fill="#000" opacity=".55"/>';
+    var yd = y0 + (Math.max(xmax, stabY + sg.cr) + 30) * sc2;
+    s += '<line x1="' + (cx - P.span / 2 * sc2) + '" x2="' + (cx + P.span / 2 * sc2) + '" y1="' + yd + '" y2="' + yd + '" stroke="#6b6b63" stroke-width="1.2" marker-start="url(#foAr)" marker-end="url(#foAr)"/>';
+    s += '<text x="' + cx + '" y="' + (yd + 16) + '" text-anchor="middle">' + TS.t('foSpan') + ' ' + P.span + ' ' + TS.t('mm') + '</text>';
+    var xr = cx - P.span / 2 * sc2 - 0;
+    var xd = cx - P.span * sc2 * 0.18;
+    s += '<line x1="' + xd + '" x2="' + xd + '" y1="' + (y0 + 1) + '" y2="' + (y0 + (P.cr * 0.93 + P.sweep * 0.03) * sc2) + '" stroke="#000" stroke-width="1.2" marker-start="url(#foAr)" marker-end="url(#foAr)"/>';
+    s += '<text x="' + (xd + 6) + '" y="' + (y0 + P.cr * sc2 / 2 + 4) + '" fill="#000">' + TS.t('foChordL') + ' ' + P.cr + '</text>';
+    void xr;
+    s += '</svg>';
+
+    // ---- профиль корня ----
+    var H3 = 200, sx = Wd - 2 * pad - 40, yc = 92, pr = profile(w.n, 80);
+    s += '<svg viewBox="0 0 ' + Wd + ' ' + H3 + '" class="foil-svg">';
     s += '<text x="' + pad + '" y="20" class="cap">' + TS.t('foProfile') + ' NACA ' + P.naca + ' · ' + TS.t('foRoot') + ' ' + P.cr + ' ' + TS.t('mm') + ' · ' + TS.t('foThick') + ' ' + f(w.n.t * P.cr, 1) + ' ' + TS.t('mm') + '</text>';
-    s += '<line x1="' + pad + '" x2="' + (Wd - pad) + '" y1="88" y2="88" stroke="#d9d9d1" stroke-dasharray="4 3"/>';
-    s += '<polygon points="' + pr.map(function (p) { return (pad + p[0] * sx).toFixed(1) + ',' + (88 - p[1] * sx).toFixed(1); }).join(' ') + '" fill="#161616"/>';
+    s += '<polygon points="' + pr.map(function (p) { return (pad + 20 + p[0] * sx).toFixed(1) + ',' + (yc - p[1] * sx).toFixed(1); }).join(' ') + '" fill="#161616"/>';
+    s += '<line x1="' + (pad + 20) + '" x2="' + (pad + 20 + sx) + '" y1="' + yc + '" y2="' + yc + '" stroke="#f2e400" stroke-width="1.2" stroke-dasharray="5 4"/>';
+    var cl = []; for (var i = 0; i <= 40; i++) { var x = i / 40; cl.push((pad + 20 + x * sx).toFixed(1) + ',' + (yc - camber(w.n, x).yc * sx).toFixed(1)); }
+    s += '<polyline points="' + cl.join(' ') + '" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="2 3"/>';
+    var xt = pad + 20 + 0.3 * sx, ht = w.n.t * sx / 2;
+    s += '<line x1="' + xt + '" x2="' + xt + '" y1="' + (yc - camber(w.n, 0.3).yc * sx - ht - 10) + '" y2="' + (yc - camber(w.n, 0.3).yc * sx + ht + 10) + '" stroke="#6b6b63" stroke-width="1.2" marker-start="url(#foAr)" marker-end="url(#foAr)"/>';
+    s += '<text x="' + (xt + 6) + '" y="' + (yc + ht + 26) + '">' + f(w.n.t * 100, 0) + ' % — ' + f(w.n.t * P.cr, 1) + ' ' + TS.t('mm') + '</text>';
+    s += '<text x="' + pad + '" y="' + (H3 - 6) + '">' + TS.t('foProfLeg') + '</text>';
     s += '</svg>';
     return s;
   }
@@ -138,7 +200,7 @@
 
   // ---------- DXF: план крыла и профиль корня (мм) ----------
   function dxf(w) {
-    var half = planform(w), full = half.concat(half.slice().reverse().map(function (p) { return [-p[0], p[1]]; }));
+    var half = halfPlan(P.span, P.cr, P.ct, P.sweep), full = half.concat(half.slice().reverse().map(function (p) { return [-p[0], p[1]]; }));
     var pr = profile(w.n, 120).map(function (p) { return [p[0] * P.cr, p[1] * P.cr - (P.cr + 60)]; });
     // POLYLINE + VERTEX (формат R12) — открывается любой программой и станком
     function poly(pts, layer) {
@@ -153,7 +215,7 @@
   // ---------- страница ----------
   var FIELDS = [
     ['foWing', [['span', 'foSpanL', 10], ['cr', 'foCr', 5], ['ct', 'foCt', 5], ['sweep', 'foSweep', 5], ['naca', 'foNaca', 0]]],
-    ['foRest', [['stab', 'foStab', 10], ['mastDepth', 'foMastD', 10], ['mastChord', 'foMastC', 5], ['mastT', 'foMastT', 0.5]]],
+    ['foRest', [['stab', 'foStab', 10], ['fuse', 'foFuse', 10], ['mastDepth', 'foMastD', 10], ['mastChord', 'foMastC', 5], ['mastT', 'foMastT', 0.5]]],
     ['foRider', [['mass', 'hyMass', 1], ['board', 'hyBoardM', 0.5], ['kmh', 'hyKmh', 0.5]]]
   ];
   function render() {
