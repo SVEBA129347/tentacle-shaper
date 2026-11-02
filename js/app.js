@@ -364,6 +364,7 @@
     r.readAsArrayBuffer(f);
   }
   TS.loadBuffer = loadBuffer;   // для проверок
+  TS.appHeavy = function () { heavy(); };
   TS.state = st;
 
   function save() {
@@ -427,6 +428,7 @@
     v3 = new TS.View3D($('v3d'));
     TS.views = { top: vTop, side: vSide, slice: vSlice };
     TS.cncUI.init();
+    TS.smartUI.init();
 
     $('file').addEventListener('change', function (e) { openFile(e.target.files[0]); e.target.value = ''; });
     $('openBtn').addEventListener('click', function () { $('file').click(); });

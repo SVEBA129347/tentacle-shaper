@@ -18,7 +18,7 @@
   // ---------- база для «привязки» верха к низу ----------
   E.prototype._baseThickness = function () {
     var b = this.b;
-    this.zb0 = b.strbot.byX(2); this.zd0 = b.strdeck.byX(2);
+    this.bot0 = cp(b.strbot); this.zb0 = b.strbot.byX(2); this.zd0 = b.strdeck.byX(2);
     this.deck0 = cp(b.strdeck);
     this.diffB = b.thickDiff ? cp(b.thickDiff) : null;
     this._diff0();
@@ -43,7 +43,9 @@
   E.prototype.snapshot = function () {
     var b = this.b;
     return { otl: cp(b.otl), bot: cp(b.strbot), deck: cp(b.strdeck), thick: b.thickDiff ? cp(b.thickDiff) : null,
-             slices: b.slices.map(cp), deck0: cp(this.deck0), diffB: this.diffB ? cp(this.diffB) : null };
+             slices: b.slices.map(cp), deck0: cp(this.deck0), bot0: cp(this.bot0), diffB: this.diffB ? cp(this.diffB) : null, L: b.length,
+             top: Object.keys(b.top).map(function (k) { return [k, cp(b.top[k].curve)]; }),
+             side: Object.keys(b.side).map(function (k) { return [k, cp(b.side[k].curve)]; }) };
   };
   E.prototype.restore = function (s) {
     var b = this.b;
@@ -51,6 +53,10 @@
     if (s.thick && b.thickDiff) TS.copyCurveInto(s.thick, b.thickDiff);
     s.slices.forEach(function (c, i) { TS.copyCurveInto(c, b.slices[i]); });
     this.deck0 = cp(s.deck0); this.diffB = s.diffB ? cp(s.diffB) : null; this._diff0();
+    if (s.L) b.length = s.L;
+    (s.top || []).forEach(function (t) { if (b.top[t[0]]) TS.copyCurveInto(t[1], b.top[t[0]].curve); });
+    (s.side || []).forEach(function (t) { if (b.side[t[0]]) TS.copyCurveInto(t[1], b.side[t[0]].curve); });
+    this.bot0 = cp(s.bot0); this.zb0 = new TS.Curve(this.bot0.P, this.bot0.T1, this.bot0.T2).byX(2);
     this.sync();
   };
   E.prototype.begin = function () { this.undo.push(this.snapshot()); if (this.undo.length > 200) this.undo.shift(); this.redo = []; };

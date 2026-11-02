@@ -139,3 +139,18 @@ table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nu
 .rm-slice { left: auto; right: 8px; top: 22px; justify-content: flex-end; }
 .rm .cap { color: var(--muted); font-size: 10px; }
 body.no-rm .rm { display: none; }
+
+/* окна */
+.dlg { position: fixed; inset: 0; background: rgba(20,30,40,.35); display: flex; align-items: center; justify-content: center; z-index: 20; }
+.dlg[hidden] { display: none; }
+.dlgbox { background: var(--panel); border-radius: 12px; padding: 16px 18px; min-width: 360px; max-width: 94vw; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.dlgbox h3 { margin: 4px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.sz td, .sz th { padding: 3px 8px; text-align: right; }
+.sz td:first-child { text-align: left; }
+.sz th { color: var(--muted); font-weight: 500; }
+.sz input, .volrow input { width: 90px; font: inherit; padding: 3px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
+.szmode { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 8px; }
+.szmode select, .volrow select { font: inherit; padding: 3px; }
+.dlgbtns { display: flex; gap: 8px; justify-content: flex-end; margin: 12px 0 8px; }
+.volrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.muted { color: var(--muted); font-size: 12px; margin-top: 6px; }

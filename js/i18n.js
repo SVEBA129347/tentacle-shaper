@@ -38,6 +38,12 @@
       cncRough: 'Черновая и мосты, мм', cRoughStep: 'Шаг по высоте', cRoughMargin: 'Припуск до доски', cRoughLoops: 'Проходов вокруг',
       cRoughLoopStep: 'Шаг между проходами', cBridgeL: 'Мост: длина от торца', cBridgeH: 'Мост: толщина',
       cRough: 'Черновая по контуру', cBridges: 'Мосты у носа и хвоста', cEndCut: 'Подрезать торец стрингера у хвоста (дек)',
+      sizeBtn: 'Размеры…', smartBtn: 'Задать в точке…', sizeTitle: 'Размеры доски, мм', szNow: 'сейчас', szNew: 'новое',
+      szMode: 'При изменении длины', szSide: 'толщина и рокер пропорционально (Constant side)', szProp: 'всё пропорционально (Constant proportions)',
+      szRocker: 'только рокер пропорционально (Constant rocker)', szNone: 'ничего не менять', szZ: 'При изменении толщины рокер пропорционально (Constant Z)',
+      apply: 'Применить', cancel: 'Отмена', close: 'Закрыть', volTitle: 'Подбор объёма', volNow: 'Сейчас', volT: 'толщиной', volW: 'шириной',
+      volTW: 'толщиной и шириной', volGo: 'Подобрать', volBusy: 'Считаю…', volFail: 'Не получается в пределах ±40 % размера.', volDone: 'Готово:',
+      smartTitle: 'Задать размер в точке', smAt: 'на', smMoved: 'сдвинута точка', smHint: 'Двигается ближайшая опорная точка кривой (контур, верх или низ стрингера); остальная доска плавно подстраивается. Ctrl+Z — отмена.',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
       editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Alt при перетаскивании касательной — излом. Esc — снять выбор.'
     },
@@ -77,6 +83,12 @@
       cncRough: 'Roughing and bridges, mm', cRoughStep: 'Depth step', cRoughMargin: 'Stock to board', cRoughLoops: 'Loops around',
       cRoughLoopStep: 'Loop spacing', cBridgeL: 'Bridge: length from end', cBridgeH: 'Bridge: thickness',
       cRough: 'Outline roughing', cBridges: 'Bridges at nose and tail', cEndCut: 'Cut stringer end at tail (deck)',
+      sizeBtn: 'Size…', smartBtn: 'Set at point…', sizeTitle: 'Board size, mm', szNow: 'now', szNew: 'new',
+      szMode: 'When length changes', szSide: 'thickness and rocker proportional (Constant side)', szProp: 'all proportional (Constant proportions)',
+      szRocker: 'rocker only proportional (Constant rocker)', szNone: 'change nothing else', szZ: 'When thickness changes, rocker proportional (Constant Z)',
+      apply: 'Apply', cancel: 'Cancel', close: 'Close', volTitle: 'Volume wizard', volNow: 'Now', volT: 'by thickness', volW: 'by width',
+      volTW: 'by thickness and width', volGo: 'Fit', volBusy: 'Computing…', volFail: 'Not reachable within ±40 % of size.', volDone: 'Done:',
+      smartTitle: 'Set a size at a point', smAt: 'at', smMoved: 'moved point', smHint: 'The nearest control point of the curve (outline, stringer top or bottom) moves; the rest of the board follows smoothly. Ctrl+Z to undo.',
       deckFit: 'Stringer top approximated by a Bezier curve within',
       editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Alt while dragging a tangent — break it. Esc — deselect.'
     }

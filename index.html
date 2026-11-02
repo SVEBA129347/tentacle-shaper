@@ -15,6 +15,8 @@
   <button id="saveBtn" class="needs-board" data-i18n="save" data-i18n-title="saveTip">Сохранить .s3dx</button>
   <button id="undoBtn" class="needs-board icon" data-i18n-title="undo">↶</button>
   <button id="redoBtn" class="needs-board icon" data-i18n-title="redo">↷</button>
+  <button id="sizeBtn" class="needs-board" data-i18n="sizeBtn">Размеры…</button>
+  <button id="smartBtn" class="needs-board" data-i18n="smartBtn">Задать в точке…</button>
   <nav class="tabs">
     <button class="tab on" data-tab="design" data-i18n="design">Проектирование</button>
     <button class="tab" data-tab="3d" data-i18n="view3d">3D</button>
@@ -81,6 +83,50 @@
   </section>
 </main>
 
+<div id="dlgSize" class="dlg" hidden>
+  <div class="dlgbox">
+    <h3 data-i18n="sizeTitle">Размеры доски</h3>
+    <table class="sz">
+      <tr><th></th><th data-i18n="szNow">сейчас</th><th data-i18n="szNew">новое</th></tr>
+      <tr><td data-i18n="length">Длина</td><td id="szL0"></td><td><input id="szL" type="number" step="1"></td></tr>
+      <tr><td data-i18n="width">Ширина</td><td id="szW0"></td><td><input id="szW" type="number" step="0.5"></td></tr>
+      <tr><td data-i18n="thick">Толщина</td><td id="szT0"></td><td><input id="szT" type="number" step="0.5"></td></tr>
+      <tr><td data-i18n="tailRocker">Рокер хвоста</td><td id="szTr0"></td><td><input id="szTr" type="number" step="0.5"></td></tr>
+      <tr><td data-i18n="noseRocker">Рокер носа</td><td id="szNr0"></td><td><input id="szNr" type="number" step="0.5"></td></tr>
+    </table>
+    <label class="szmode"><span data-i18n="szMode">При изменении длины</span>
+      <select id="szMode">
+        <option value="side" data-i18n="szSide">толщина и рокер пропорционально (Constant side)</option>
+        <option value="prop" data-i18n="szProp">всё пропорционально (Constant proportions)</option>
+        <option value="rocker" data-i18n="szRocker">только рокер пропорционально (Constant rocker)</option>
+        <option value="none" data-i18n="szNone">ничего не менять</option>
+      </select></label>
+    <label class="szmode"><span data-i18n="szZ">При изменении толщины рокер пропорционально (Constant Z)</span><input id="szZ" type="checkbox"></label>
+    <div class="dlgbtns"><button id="szApply" class="primary" data-i18n="apply">Применить</button><button id="szCancel" data-i18n="cancel">Отмена</button></div>
+    <h3 data-i18n="volTitle">Подбор объёма</h3>
+    <div class="volrow"><span data-i18n="volNow">Объём сейчас</span> <b id="volNow"></b>
+      <input id="volT" type="number" step="0.05"> <span data-i18n="l">л</span>
+      <select id="volWhat"><option value="T" data-i18n="volT">толщиной</option><option value="W" data-i18n="volW">шириной</option><option value="TW" data-i18n="volTW">толщиной и шириной</option></select>
+      <button id="volGo" data-i18n="volGo">Подобрать</button></div>
+    <div id="volMsg" class="muted"></div>
+  </div>
+</div>
+
+<div id="dlgSmart" class="dlg" hidden>
+  <div class="dlgbox">
+    <h3 data-i18n="smartTitle">Задать размер в точке</h3>
+    <div class="volrow">
+      <select id="smWhat"><option value="width" data-i18n="width">Ширина</option><option value="thick" data-i18n="thick">Толщина</option><option value="rocker" data-i18n="rocker">Рокер</option></select>
+      <span data-i18n="smAt">на</span> <input id="smD" type="number" step="1" value="300"> <span data-i18n="mm">мм</span>
+      <select id="smFrom"><option value="tail" data-i18n="fromTail">от хвоста</option><option value="nose" data-i18n="fromNose">от носа</option></select>
+      <span>=</span> <input id="smV" type="number" step="0.1"> <span data-i18n="mm">мм</span>
+    </div>
+    <div class="muted" id="smNow"></div>
+    <div class="dlgbtns"><button id="smApply" class="primary" data-i18n="apply">Применить</button><button id="smClose" data-i18n="close">Закрыть</button></div>
+    <div class="muted" data-i18n="smHint"></div>
+  </div>
+</div>
+
 <footer class="status">
   <span id="coords"></span>
   <span class="hint design-only" data-i18n="hint2d"></span>
@@ -97,6 +143,8 @@
 <script src="js/views2d.js"></script>
 <script src="js/view3d.js"></script>
 <script src="js/edit.js"></script>
+<script src="js/resize.js"></script>
+<script src="js/smart.js"></script>
 <script src="js/cnc.js"></script>
 <script src="js/cncui.js"></script>
 <script src="js/app.js"></script>
