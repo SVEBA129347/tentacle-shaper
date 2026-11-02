@@ -186,3 +186,12 @@ body.loaded .status .hint { display: none; }
 .seln { margin-left: auto; font-size: 11px; color: var(--sel, #c2255c); font-weight: 600; }
 .dlgbox h4 { margin: 14px 0 6px; font-size: 13px; }
 [hidden] { display: none !important; }
+
+#printArea { display: none; }
+@media print {
+  body > *:not(#printArea) { display: none !important; }
+  body { background: #fff !important; margin: 0; }
+  #printArea { display: block; }
+  .ppage { page-break-after: always; break-after: page; overflow: hidden; }
+  .ppage svg { display: block; }
+}

@@ -18,6 +18,7 @@
   <button id="sizeBtn" class="needs-board" data-i18n="sizeBtn">Размеры…</button>
   <button id="smartBtn" class="needs-board" data-i18n="smartBtn">Задать в точке…</button>
   <button id="actBtn" class="needs-board" data-i18n="actBtn">Действия…</button>
+  <button id="printBtn" class="needs-board" data-i18n="printBtn">Печать…</button>
   <button id="curvBtn" class="needs-board toggle" data-i18n="curvBtn" data-i18n-title="curvTip">Кривизна</button>
   <button id="ghostBtn" class="needs-board toggle" data-i18n="ghostBtn" data-i18n-title="ghostTip">Сравнить…</button>
   <input id="ghostFile" type="file" accept=".s3dx" hidden>
@@ -179,6 +180,27 @@
   </div>
 </div>
 
+<div id="dlgPrint" class="dlg" hidden>
+  <div class="dlgbox">
+    <h3 data-i18n="prTitle">Печать и PDF</h3>
+    <div class="volrow"><select id="prWhat">
+      <option value="sheet" data-i18n="prSheetO">Лист доски с размерами</option>
+      <option value="otl" data-i18n="prOtlO">Шаблон 1:1 — половина контура</option>
+      <option value="str" data-i18n="prStrO">Шаблон 1:1 — стрингер (низ и верх)</option>
+      <option value="secAll" data-i18n="prSecAllO">Шаблоны 1:1 — все сечения</option>
+      <option value="secCur" data-i18n="prSecCurO">Шаблон 1:1 — сечение на синей линии</option>
+    </select>
+    <select id="prPaper"><option>A4</option><option>A3</option></select></div>
+    <div class="volrow"><span data-i18n="prOvL">Нахлёст листов</span> <input id="prOv" type="number" step="1" value="10"> <span data-i18n="mm">мм</span>
+      <span data-i18n="prCorrL">Поправка масштаба</span> <input id="prCorr" type="number" step="0.001" value="1.000"></div>
+    <div class="muted" id="prPages"></div>
+    <div class="muted" data-i18n="prHint"></div>
+    <div class="dlgbtns"><button id="prGo" class="primary" data-i18n="prGo">Печать / PDF</button><button id="prClose" data-i18n="close">Закрыть</button></div>
+  </div>
+</div>
+<div id="printArea"></div>
+<style id="printPageCss"></style>
+
 <footer class="status">
   <span id="coords"></span>
   <span class="hint design-only" data-i18n="hint2d"></span>
@@ -198,6 +220,7 @@
 <script src="js/resize.js"></script>
 <script src="js/smart.js"></script>
 <script src="js/actions.js"></script>
+<script src="js/print.js"></script>
 <script src="js/cnc.js"></script>
 <script src="js/cncui.js"></script>
 <script src="js/app.js"></script>

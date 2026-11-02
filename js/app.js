@@ -969,6 +969,7 @@
     TS.cncUI.init();
     TS.smartUI.init();
     TS.actionsUI.init();
+    TS.printUI.init();
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
