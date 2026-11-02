@@ -277,3 +277,7 @@ body[data-tab="fin"] .empty, body[data-tab="fin"] .work, body[data-tab="foil"] .
 .foil-side .small { font-size: 11px; color: var(--muted); line-height: 1.45; }
 @media (max-width: 900px) { .foil-grid { grid-template-columns: 1fr; } }
 #foForm input[data-fo="naca"] { width: 90px; flex: none; text-align: right; font: inherit; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; }
+.foil-3d { background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #efefeb 75%); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.foil-3d-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 12px 0; font-size: 13px; }
+.foil-3d-cap span { color: var(--muted); font-size: 12px; }
+#fo3d canvas { display: block; cursor: grab; }

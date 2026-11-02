@@ -13,13 +13,15 @@
   // образцы — условные, не копии чьих-то крыльев
   // пропорции — как у серийных крыльев (серф: ~1300 см², размах 950, удлинение ~7, стаб ~200 см², фюзеляж ~660 мм)
   var PRESETS = {
+    // крыло Tentaclesurf: снято с 3D-модели (размах 719, площадь ~1165 см², профиль ≈ NACA 4411, кромка уходит назад на 120 мм)
+    tentacle: { span: 719, cr: 199, ct: 108, sweep: 120, naca: '4411', stab: 195, fuse: 629 },
     surf: { span: 950, cr: 188, ct: 60, sweep: 60, naca: '2412', stab: 195, fuse: 660 },
     wake: { span: 700, cr: 180, ct: 55, sweep: 40, naca: '4412', stab: 180, fuse: 600 },
     pump: { span: 1100, cr: 125, ct: 40, sweep: 70, naca: '2410', stab: 150, fuse: 700 },
     big:  { span: 900, cr: 275, ct: 90, sweep: 50, naca: '4412', stab: 240, fuse: 660 }
   };
-  var P = { preset: 'surf', span: 950, cr: 188, ct: 60, sweep: 60, naca: '2412', mass: 80, board: 6, kmh: 18,
-            stab: 195, fuse: 660, mastDepth: 600, mastChord: 125, mastT: 15, sea: false, clmax: 1.2 };
+  var P = { preset: 'tentacle', span: 719, cr: 199, ct: 108, sweep: 120, naca: '4411', mass: 80, board: 6, kmh: 18,
+            stab: 195, fuse: 629, mastDepth: 600, mastChord: 125, mastT: 15, sea: false, clmax: 1.2 };
 
   // ---------- профиль NACA 4 цифры ----------
   function naca(code) {
@@ -222,7 +224,9 @@
     var el = $('foilPage'); if (!el) return;
     var h = '<div class="fin-wrap foil-wrap">' +
       '<div class="fin-head"><img src="img/badge.svg" alt="" class="fin-badge"><div><h1>' + TS.t('foTitle') + '</h1><p class="lead">' + TS.t('foLead') + '</p></div></div>' +
-      '<div class="foil-grid"><div class="foil-main"><div id="foDraw"></div><div id="foChart"></div></div>' +
+      '<div class="foil-grid"><div class="foil-main">' +
+      (P.preset === 'tentacle' ? '<div class="foil-3d"><div class="foil-3d-cap"><b>' + TS.t('fo3dT') + '</b><span>' + TS.t('fo3dN') + '</span></div><div id="fo3d"></div></div>' : '') +
+      '<div id="foDraw"></div><div id="foChart"></div></div>' +
       '<div class="foil-side"><div class="foil-presets"><span>' + TS.t('foPreset') + '</span>' +
       Object.keys(PRESETS).map(function (k) { return '<button data-pre="' + k + '"' + (P.preset === k ? ' class="on"' : '') + '>' + TS.t('foP_' + k) + '</button>'; }).join('') + '</div>' +
       '<div id="foOut"></div><div id="foForm"></div>' +
@@ -247,7 +251,7 @@
     });
     var pb = el.querySelectorAll('[data-pre]');
     for (var j = 0; j < pb.length; j++) pb[j].addEventListener('click', function (e) {
-      var k = e.currentTarget.getAttribute('data-pre'); Object.assign(P, PRESETS[k]); P.preset = k; render();
+      var k = e.currentTarget.getAttribute('data-pre'); Object.assign(P, PRESETS[k]); P.preset = k; render(); view3d();
     });
     $('foSea').addEventListener('change', function (e) { P.sea = e.target.checked; update(); });
     $('foDxf').addEventListener('click', function () {
@@ -284,5 +288,46 @@
     $('foOut').innerHTML = o + '</table>';
   }
   TS.foil = { naca: naca, profile: profile, alpha0: alpha0, wing: function () { return wing(); }, at: function (V) { return at(wing(), V); }, P: P };
-  TS.foilUI = { init: render, show: function () { if (!$('foDraw')) render(); }, lang: render };
+  // ---------- 3D-модель крыла Tentaclesurf (img/foil-tentacle.json: позиции int16 × 0.05 мм, индексы uint16) ----------
+  var V3 = null;
+  function view3d() {
+    var box = $('fo3d'); if (!box || !window.THREE) return;
+    if (!V3) {
+      var r;
+      try { r = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { box.textContent = TS.t('fo3dNoGL'); return; }
+      var sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, 2, 1, 10000);
+      sc.add(new THREE.HemisphereLight(0xffffff, 0x8a8a80, 0.75));
+      var l1 = new THREE.DirectionalLight(0xffffff, 0.9); l1.position.set(300, 600, 400); sc.add(l1);
+      var l2 = new THREE.DirectionalLight(0xffffff, 0.35); l2.position.set(-400, -200, -300); sc.add(l2);
+      var g = new THREE.Group(); sc.add(g);
+      cam.position.set(-620, 380, 760); cam.lookAt(0, 0, 0);
+      var ctl = new THREE.OrbitControls(cam, r.domElement); ctl.enableDamping = true; ctl.autoRotate = true; ctl.autoRotateSpeed = 1.2;
+      r.domElement.addEventListener('pointerdown', function () { ctl.autoRotate = false; });
+      V3 = { r: r, sc: sc, cam: cam, ctl: ctl, g: g, loaded: false };
+      var COL = { wing: 0x1b1b1b, fuse: 0x3a3a3a, mount: 0x6b6b63, nose: 0xf2e400 };
+      fetch('img/foil-tentacle.json').then(function (x) { return x.json(); }).then(function (d) {
+        d.parts.forEach(function (pt) {
+          var pb = atob(pt.pos), ib = atob(pt.idx), pa = new Int16Array(pb.length / 2), ia = new Uint16Array(ib.length / 2), i;
+          var dv = new DataView(new ArrayBuffer(pb.length)); for (i = 0; i < pb.length; i++) dv.setUint8(i, pb.charCodeAt(i));
+          for (i = 0; i < pa.length; i++) pa[i] = dv.getInt16(i * 2, true);
+          var dv2 = new DataView(new ArrayBuffer(ib.length)); for (i = 0; i < ib.length; i++) dv2.setUint8(i, ib.charCodeAt(i));
+          for (i = 0; i < ia.length; i++) ia[i] = dv2.getUint16(i * 2, true);
+          var pos = new Float32Array(pa.length); for (i = 0; i < pa.length; i++) pos[i] = pa[i] * pt.scale;
+          var geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setIndex(new THREE.BufferAttribute(ia, 1));
+          geo.computeVertexNormals();
+          g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: COL[pt.name] || 0x555555, roughness: pt.name === 'wing' ? 0.35 : 0.5, metalness: 0.15, side: THREE.DoubleSide })));
+        });
+        V3.loaded = true;
+      }).catch(function () { box.textContent = TS.t('fo3dNoGL'); });
+      (function loop() {
+        requestAnimationFrame(loop);
+        if (!V3.r.domElement.isConnected || document.body.getAttribute('data-tab') !== 'foil') return;
+        V3.ctl.update(); V3.r.render(V3.sc, V3.cam);
+      })();
+    }
+    box.appendChild(V3.r.domElement);
+    var w = box.clientWidth || 600, h = Math.round(w * 0.5);
+    V3.r.setPixelRatio(window.devicePixelRatio || 1); V3.r.setSize(w, h); V3.cam.aspect = w / h; V3.cam.updateProjectionMatrix();
+  }
+  TS.foilUI = { init: function () { render(); }, show: function () { if (!$('foDraw')) render(); view3d(); }, lang: function () { render(); view3d(); } };
 })(window.TS = window.TS || {});
