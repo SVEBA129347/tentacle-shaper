@@ -81,6 +81,7 @@
     var T2 = points(path(b, 'Tangents_2/Polygone3d'));
     var ct = P.map(function (_, i) { return parseInt(text(b, 'Control_type_point_' + i), 10) || 0; });
     var c = new Curve(P, T1, T2, ct, text(b, 'Name') || '');
+    c.ttype = P.map(function (_, i) { return parseInt(text(b, 'Tangent_type_point_' + i), 10) || 0; });
     c.node = b;
     return c;
   }
@@ -130,9 +131,12 @@
 
     var ns = parseInt(text(B, 'Number_of_slices'), 10) || 0;
     for (var k = 0; k < ns; k++) {
-      var c = readCurve(kid(B, 'Couples_' + k));
-      if (c) board.slices.push(c);
+      var w = kid(B, 'Couples_' + k), c = readCurve(w);
+      if (c) { c.wrap = w; board.slices.push(c); }
     }
+    // где в файле стоят сечения: перед каким узлом вставлять при записи
+    var lastW = board.slices.length ? board.slices[board.slices.length - 1].wrap : null;
+    board.slicesAnchor = lastW ? lastW.nextSibling : null;
     if (!board.otl || !board.strbot || !board.strdeck || board.slices.length < 2)
       throw new Error('Не хватает кривых доски (контур, стрингер или сечения)');
     return board;
@@ -152,6 +156,17 @@
   }
   function writeCurve(c) {
     if (!c || !c.node) return;
+    var cp0 = path(c.node, 'Control_points/Polygone3d');
+    if (cp0 && kids(cp0, 'Point3d').length !== c.P.length) {
+      rebuildPoly(cp0, c.P); rebuildPoly(path(c.node, 'Tangents_1/Polygone3d'), c.T1); rebuildPoly(path(c.node, 'Tangents_2/Polygone3d'), c.T2);
+      rebuildTypes(c.node, c);
+      return;
+    }
+    // тип касательной мог поменяться (ровная/горизонтальная)
+    if (c.ttype) c.ttype.forEach(function (v, i) {
+      var n = kid(c.node, 'Tangent_type_point_' + i);
+      if (n && (parseInt(n.textContent, 10) || 0) !== v) n.textContent = ' ' + v;
+    });
     writePoints(path(c.node, 'Control_points/Polygone3d'), c.P);
     writePoints(path(c.node, 'Tangents_1/Polygone3d'), c.T1);
     writePoints(path(c.node, 'Tangents_2/Polygone3d'), c.T2);
@@ -161,11 +176,69 @@
     dst.P = src.P.map(function (p) { return p.slice(); });
     dst.T1 = src.T1.map(function (p) { return p.slice(); });
     dst.T2 = src.T2.map(function (p) { return p.slice(); });
+    if (src.ctype) dst.ctype = src.ctype.slice();
+    if (src.ttype) dst.ttype = src.ttype.slice();
+    if (src.free) dst.free = src.free.slice();
   };
+
+  // число точек кривой изменилось — перестраиваем списки точек и типов в XML
+  function rebuildPoly(poly, pts) {
+    var old = kids(poly, 'Point3d'), tpl = old[0];
+    if (!tpl) return;
+    var ws = tpl.previousSibling && tpl.previousSibling.nodeType === 3 ? tpl.previousSibling.textContent : '\n';
+    old.forEach(function (n) {
+      if (n.previousSibling && n.previousSibling.nodeType === 3) n.parentNode.removeChild(n.previousSibling);
+      n.parentNode.removeChild(n);
+    });
+    var tail = poly.lastChild;   // пробелы перед закрывающим тегом
+    pts.forEach(function (p) {
+      var c = tpl.cloneNode(true);
+      ['x', 'y', 'z'].forEach(function (t, k) { var n = kid(c, t); if (n) n.textContent = f6(p[k]); });
+      poly.insertBefore(poly.ownerDocument.createTextNode(ws), tail);
+      poly.insertBefore(c, tail);
+    });
+    var nb = kid(poly, 'Nb_of_points'); if (nb) nb.textContent = String(pts.length);
+  }
+  function rebuildTypes(b, c) {
+    var doc = b.ownerDocument, ws = '\n';
+    var old = [];
+    for (var ch = b.firstElementChild; ch; ch = ch.nextElementSibling)
+      if (/^(Control|Tangent)_type_point_\d+$/.test(ch.tagName)) old.push(ch);
+    if (!old.length) return;
+    var anchor = old[old.length - 1].nextSibling;
+    if (old[0].previousSibling && old[0].previousSibling.nodeType === 3) ws = old[0].previousSibling.textContent;
+    old.forEach(function (n) {
+      if (n.previousSibling && n.previousSibling.nodeType === 3) b.removeChild(n.previousSibling);
+      b.removeChild(n);
+    });
+    function add(tag, v) { b.insertBefore(doc.createTextNode(ws), anchor); var e = doc.createElement(tag); e.textContent = ' ' + v; b.insertBefore(e, anchor); }
+    c.P.forEach(function (_, i) { add('Control_type_point_' + i, (c.ctype && c.ctype[i]) || 0); });
+    c.P.forEach(function (_, i) { add('Tangent_type_point_' + i, (c.ttype && c.ttype[i]) || 0); });
+  }
 
   // fields: {Length, Width, ...} — числа для полей доски (в единицах файла)
   TS.writeS3dx = function (board, fields) {
     var B = board.B;
+    // сечения: порядок, имена Couples_k и их число — по текущему списку
+    var all = [];
+    for (var ch = B.firstElementChild; ch; ch = ch.nextElementSibling) if (/^Couples_\d+$/.test(ch.tagName)) all.push(ch);
+    var changed = all.length !== board.slices.length || board.slices.some(function (c, i) { return c.wrap !== all[i]; });
+    if (changed) {
+      var ws = all[0] && all[0].previousSibling && all[0].previousSibling.nodeType === 3 ? all[0].previousSibling.textContent : '\n';
+      all.forEach(function (n) { if (n.previousSibling && n.previousSibling.nodeType === 3) B.removeChild(n.previousSibling); B.removeChild(n); });
+      var anchor = board.slicesAnchor && board.slicesAnchor.parentNode === B ? board.slicesAnchor : null;
+      board.slices.forEach(function (c, i) {
+        var w = c.wrap;
+        if (w.tagName !== 'Couples_' + i) {
+          var nw = board.doc.createElement('Couples_' + i);
+          while (w.firstChild) nw.appendChild(w.firstChild);
+          c.wrap = nw; w = nw;
+        }
+        B.insertBefore(board.doc.createTextNode(ws), anchor);
+        B.insertBefore(w, anchor);
+      });
+      var nsn = kid(B, 'Number_of_slices'); if (nsn) nsn.textContent = String(board.slices.length);
+    }
     var curves = [board.otl, board.strbot, board.strdeck, board.thickDiff].concat(board.slices);
     Object.keys(board.top).forEach(function (k) { curves.push(board.top[k].curve); });
     Object.keys(board.side).forEach(function (k) { curves.push(board.side[k].curve); });

@@ -171,6 +171,46 @@
     if (ch) heavy();
   }
 
+  // ---------- двойной щелчок по линии — новая точка ----------
+  function onDbl(sx, sy, view) {
+    if (!st.ed) return false;
+    var key = editKey(view); if (!key) return false;
+    var w = view.toWorld(sx, sy), keys = [].concat(key), best = null;
+    keys.forEach(function (k) {
+      if (k.indexOf('slice:') === 0) return;
+      var sign = k === 'otl' && w[1] < 0 ? -1 : 1;
+      var n = st.ed.nearestOnCurve(k, w[0] / 10, sign * w[1] / 10); if (!n) return;
+      var p = st.ed.curve(k).point(n.i, n.t), iv = k === 'otl' ? 1 : 2;
+      var sp = view.toScreen(p[0] * 10, sign * p[iv] * 10), d = Math.hypot(sp[0] - sx, sp[1] - sy);
+      if (d < 10 && (!best || d < best.d)) best = { k: k, i: n.i, t: n.t, d: d };
+    });
+    if (!best) {
+      if (keys[0].indexOf('slice:') === 0) { $('msg').textContent = TS.t('noPtSlice'); return true; }
+      return false;
+    }
+    st.ed.begin();
+    if (!st.ed.insertPoint(best.k, best.i, best.t)) { st.ed.undo.pop(); return true; }
+    st.ed.sel = { key: best.k, i: best.i + 1, kind: 'P' };
+    heavy();
+    return true;
+  }
+  function delSelected() {
+    var s = st.ed && st.ed.sel; if (!s || s.kind !== 'P') return;
+    st.ed.begin();
+    if (st.ed.deletePoint(s.key, s.i)) { st.ed.sel = null; heavy(); } else st.ed.undo.pop();
+  }
+  function setPtType(t) {
+    var s = st.ed && st.ed.sel; if (!s) return;
+    st.ed.begin(); st.ed.setType(s.key, s.i, t); heavy();
+  }
+  function sliceButtons() {
+    var k = sliceIndexAtCursor(), n = st.model ? st.model.sliceX.length : 0;
+    $('slDel').disabled = !(k > 0 && k < n - 1);
+    $('slMoveL').style.visibility = k > 0 && k < n - 1 ? 'visible' : 'hidden';
+    if (k >= 0 && document.activeElement !== $('slX')) $('slX').value = fmt(st.model.sliceX[k] * 10, 1);
+    $('slAdd').disabled = !(k < 0 && st.secX > 0.5 && st.secX < st.model.L - 0.5);
+  }
+
   // ---------- пересчёт ----------
   function light() {
     st.model = new TS.Model(st.board); st.rmMs = null;
@@ -209,6 +249,9 @@
     $('selUl').textContent = n[0]; $('selVl').textContent = n[1];
     if (document.activeElement !== $('selU')) $('selU').value = fmt(v[0] * 10, 2);
     if (document.activeElement !== $('selV')) $('selV').value = fmt(v[1] * 10, 2);
+    var tp = st.ed.typeOf(s.key, s.i), tb = document.querySelectorAll('.ptypes [data-t]');
+    for (var q = 0; q < tb.length; q++) { tb[q].classList.toggle('on', tb[q].getAttribute('data-t') === tp); tb[q].disabled = s.kind !== 'P'; }
+    $('delPt').disabled = s.kind !== 'P' || s.key.indexOf('slice:') === 0;
   }
   function applyInputs() {
     var s = st.ed && st.ed.sel; if (!s) return;
@@ -318,7 +361,7 @@
     vSlice.fitted = false;
     redraw2d();
   }
-  function redraw2d() { vTop.redraw(); vSide.redraw(); vSlice.redraw(); renderRM(); }
+  function redraw2d() { vTop.redraw(); vSide.redraw(); vSlice.redraw(); renderRM(); if (st.model) sliceButtons(); }
 
   function setSideMode(m) {
     st.sideMode = m;
@@ -402,7 +445,7 @@
     vTop = new TS.View2D($('cTop'), {
       bounds: function () { var g = st.geo; return g && [0, -g.maxY, g.L, g.maxY]; },
       draw: drawTop, onClick: function (x) { setSecX(x / 10); }, onMove: status.bind('Y'),
-      onDown: onDown, onDrag: onDrag, onUp: onUp
+      onDown: onDown, onDrag: onDrag, onUp: onUp, onDbl: onDbl
     });
     vSide = new TS.View2D($('cSide'), {
       bounds: function () {
@@ -414,7 +457,7 @@
         var t = st.sideMode === 'thick';
         $('coords').textContent = (t ? 'S ' : 'X ') + fmt(x) + '  ' + (t ? 'T ' : 'Z ') + fmt(y);
       },
-      onDown: onDown, onDrag: onDrag, onUp: onUp
+      onDown: onDown, onDrag: onDrag, onUp: onUp, onDbl: onDbl
     });
     vSlice = new TS.View2D($('cSlice'), {
       bounds: function () {
@@ -423,12 +466,30 @@
         return [-w, m.zb(x) * 10 - 5, w, m.zd(x) * 10 + 5];
       },
       draw: drawSlice, onMove: function (y, z) { $('coords').textContent = 'Y ' + fmt(y) + '  Z ' + fmt(z); },
-      onDown: onDown, onDrag: onDrag, onUp: onUp
+      onDown: onDown, onDrag: onDrag, onUp: onUp, onDbl: onDbl
     });
     v3 = new TS.View3D($('v3d'));
     TS.views = { top: vTop, side: vSide, slice: vSlice };
     TS.cncUI.init();
     TS.smartUI.init();
+    var tb = document.querySelectorAll('.ptypes [data-t]');
+    for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
+    $('delPt').addEventListener('click', delSelected);
+    $('slAdd').addEventListener('click', function () {
+      st.ed.begin(); var k = st.ed.addSlice(st.model, st.secX);
+      if (k < 0) { st.ed.undo.pop(); return; }
+      heavy(); setSecX(st.model.sliceX[k]);
+    });
+    $('slDel').addEventListener('click', function () {
+      var k = sliceIndexAtCursor(); st.ed.begin();
+      if (!st.ed.deleteSlice(k)) { st.ed.undo.pop(); return; }
+      st.ed.sel = null; heavy(); setSecX(st.secX);
+    });
+    $('slX').addEventListener('change', function () {
+      var k = sliceIndexAtCursor(), v = parseFloat($('slX').value.replace(',', '.')) / 10; if (k < 0 || !isFinite(v)) return;
+      st.ed.begin(); var x = st.ed.moveSlice(k, v); if (x === false) { st.ed.undo.pop(); return; }
+      st.ed.sel = null; heavy(); setSecX(x);
+    });
 
     $('file').addEventListener('change', function (e) { openFile(e.target.files[0]); e.target.value = ''; });
     $('openBtn').addEventListener('click', function () { $('file').click(); });
@@ -467,6 +528,7 @@
       }
       if (mod && (k === 'y' || k === 'н')) { e.preventDefault(); if (st.ed.doRedo()) heavy(); return; }
       if (k === 'Escape') { st.ed.sel = null; showSel(); redraw2d(); return; }
+      if ((k === 'Delete' || k === 'Backspace') && st.ed.sel) { e.preventDefault(); delSelected(); return; }
       var step = (e.shiftKey ? 1 : 0.1) / 10, d = null;   // 0.1 мм, с Shift — 1 мм
       if (k === 'ArrowLeft') d = [-step, 0]; else if (k === 'ArrowRight') d = [step, 0];
       else if (k === 'ArrowUp') d = [0, step]; else if (k === 'ArrowDown') d = [0, -step];

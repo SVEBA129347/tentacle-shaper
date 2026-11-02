@@ -50,7 +50,11 @@
       }
       drag = null;
     });
-    canvas.addEventListener('dblclick', function () { self.fit(); self.redraw(); });
+    canvas.addEventListener('dblclick', function (e) {
+      var r = canvas.getBoundingClientRect();
+      if (self.o.onDbl && self.o.onDbl(e.clientX - r.left, e.clientY - r.top, self)) return;
+      self.fit(); self.redraw();
+    });
   }
 
   View2D.prototype.toScreen = function (x, y) { return [this.ox + x * this.s, this.oy - y * this.s * this.exag]; };

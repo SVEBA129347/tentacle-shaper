@@ -71,6 +71,8 @@
         <div id="selTitle" class="seltitle"></div>
         <div class="selrow"><label><span id="selUl">X</span><input id="selU" inputmode="decimal"></label>
           <label><span id="selVl">Y</span><input id="selV" inputmode="decimal"></label><span class="unit" data-i18n="mm">мм</span></div>
+        <div class="ptypes"><button data-t="smooth" data-i18n="tSmooth">Плавная</button><button data-t="corner" data-i18n="tCorner">Излом</button><button data-t="axis" data-i18n="tAxis">Горизонт.</button>
+          <button id="delPt" class="danger" data-i18n="delPt">Удалить точку</button></div>
         <div class="selhint" data-i18n="editHint"></div>
       </div>
       <h3 data-i18n="dims">Размеры</h3>
@@ -78,6 +80,8 @@
       <h3 data-i18n="slices">Сечения</h3>
       <div id="sliceList" class="chips"></div>
       <div class="range"><input id="secRange" type="range" min="0" max="100" step="0.1" value="0"><span id="secVal"></span></div>
+      <div class="slbtns"><button id="slAdd" data-i18n="slAdd">+ Сечение здесь</button><button id="slDel" class="danger" data-i18n="slDel">Удалить сечение</button>
+        <label id="slMoveL"><span data-i18n="slX">X сечения</span> <input id="slX" type="number" step="1"> <span data-i18n="mm">мм</span></label></div>
       </div>
     </aside>
   </section>

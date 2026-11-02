@@ -39,11 +39,15 @@
     return null;
   };
 
-  function cp(c) { return { P: c.P.map(function (p) { return p.slice(); }), T1: c.T1.map(function (p) { return p.slice(); }), T2: c.T2.map(function (p) { return p.slice(); }) }; }
+  function cp(c) {
+    var o = { P: c.P.map(function (p) { return p.slice(); }), T1: c.T1.map(function (p) { return p.slice(); }), T2: c.T2.map(function (p) { return p.slice(); }) };
+    if (c.ctype) o.ctype = c.ctype.slice(); if (c.ttype) o.ttype = c.ttype.slice(); if (c.free) o.free = c.free.slice();
+    return o;
+  }
   E.prototype.snapshot = function () {
     var b = this.b;
     return { otl: cp(b.otl), bot: cp(b.strbot), deck: cp(b.strdeck), thick: b.thickDiff ? cp(b.thickDiff) : null,
-             slices: b.slices.map(cp), deck0: cp(this.deck0), bot0: cp(this.bot0), diffB: this.diffB ? cp(this.diffB) : null, L: b.length,
+             slices: b.slices.map(function (c) { return { c: c, d: cp(c) }; }), deck0: cp(this.deck0), bot0: cp(this.bot0), diffB: this.diffB ? cp(this.diffB) : null, L: b.length,
              top: Object.keys(b.top).map(function (k) { return [k, cp(b.top[k].curve)]; }),
              side: Object.keys(b.side).map(function (k) { return [k, cp(b.side[k].curve)]; }) };
   };
@@ -51,7 +55,7 @@
     var b = this.b;
     TS.copyCurveInto(s.otl, b.otl); TS.copyCurveInto(s.bot, b.strbot); TS.copyCurveInto(s.deck, b.strdeck);
     if (s.thick && b.thickDiff) TS.copyCurveInto(s.thick, b.thickDiff);
-    s.slices.forEach(function (c, i) { TS.copyCurveInto(c, b.slices[i]); });
+    b.slices = s.slices.map(function (o) { TS.copyCurveInto(o.d, o.c); return o.c; });
     this.deck0 = cp(s.deck0); this.diffB = s.diffB ? cp(s.diffB) : null; this._diff0();
     if (s.L) b.length = s.L;
     (s.top || []).forEach(function (t) { if (b.top[t[0]]) TS.copyCurveInto(t[1], b.top[t[0]].curve); });
@@ -167,8 +171,8 @@
       var H = kind === 'T1' ? c.T1[i] : c.T2[i], O = kind === 'T1' ? c.T2[i] : c.T1[i];
       var hasO = (kind === 'T1' && i < n - 1) || (kind === 'T2' && i > 0);
       // были ли касательные на одной прямой (гладкая точка)
-      var smooth = false;
-      if (hasO) {
+      var smooth = false, axis = c.ttype && c.ttype[i] === 16, free = c.free && c.free[i];
+      if (hasO && !free) {
         var ax = H[iu] - P[iu], ay = H[iv] - P[iv], bx = O[iu] - P[iu], by = O[iv] - P[iv];
         var la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
         smooth = la > 1e-6 && lb > 1e-6 && (ax * bx + ay * by) / (la * lb) < -0.9998;
@@ -179,6 +183,7 @@
       }
       if (slice && i === 0 && kind === 'T2' && Math.abs(H[2] - P[2]) < 1e-6) nv2 = P[2];          // дно в центре горизонтально
       if (slice && i === n - 1 && kind === 'T1' && Math.abs(H[2] - P[2]) < 1e-6) nv2 = P[2];      // дек в центре горизонтально
+      if (axis) { if (slice) nu2 = P[iu]; else nv2 = P[iv]; }
       H[iu] = nu2; H[iv] = nv2;
       if (smooth && !alt) {
         var dx = H[iu] - P[iu], dy = H[iv] - P[iv], l = Math.hypot(dx, dy);
@@ -209,6 +214,140 @@
     var c = this.curve(sel.key), slice = sel.key.indexOf('slice:') === 0;
     var p = sel.kind === 'P' ? c.P[sel.i] : (sel.kind === 'T1' ? c.T1[sel.i] : c.T2[sel.i]);
     return slice ? [p[1], p[2]] : [p[0], sel.key === 'otl' ? p[1] : p[2]];
+  };
+
+  // ---------- добавить / удалить опорную точку (контур, низ и верх стрингера, толщина) ----------
+  function lerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function splitArr(c, i, t, keepType) {
+    var p0 = c.P[i], p1 = c.T2[i], p2 = c.T1[i + 1], p3 = c.P[i + 1];
+    var a = lerp(p0, p1, t), bq = lerp(p1, p2, t), cc = lerp(p2, p3, t), d = lerp(a, bq, t), e = lerp(bq, cc, t), m = lerp(d, e, t);
+    c.T2[i] = a; c.T1[i + 1] = cc;
+    c.P.splice(i + 1, 0, m); c.T1.splice(i + 1, 0, d); c.T2.splice(i + 1, 0, e);
+    if (c.ctype) c.ctype.splice(i + 1, 0, 0);
+    if (c.ttype) c.ttype.splice(i + 1, 0, 0);
+    if (c.free) c.free.splice(i + 1, 0, false);
+  }
+  // точка на кривой: сегмент и параметр, ближайшие к (u, v) в плоскости вида
+  E.prototype.nearestOnCurve = function (key, u, v) {
+    var c = this.curve(key), iv = key === 'otl' ? 1 : 2, best = null;
+    for (var i = 0; i < c.P.length - 1; i++) for (var k = 1; k < 100; k++) {
+      var t = k / 100, p = c.point(i, t), d = Math.hypot(p[0] - u, p[iv] - v);
+      if (!best || d < best.d) best = { i: i, t: t, d: d };
+    }
+    return best;
+  };
+  E.prototype.insertPoint = function (key, i, t) {
+    if (key.indexOf('slice:') === 0) return false;     // у всех сечений должно быть одно число точек
+    var c = this.curve(key); if (!c) return false;
+    splitArr(c, i, t);
+    // база привязки верха и кривая толщины идут той же структурой
+    if (key === 'deck') splitArr(this.deck0, i, t);
+    if (key === 'thick' && this.diffB) { splitArr(this.diffB, i, t); this._diff0(); }
+    this.sync(); this.dirty = true; this.everEdited = true;
+    return true;
+  };
+  E.prototype.deletePoint = function (key, i) {
+    if (key.indexOf('slice:') === 0) return false;
+    var c = this.curve(key); if (!c || i <= 0 || i >= c.P.length - 1 || c.P.length <= 2) return false;
+    // удаление: ручки соседей подбираются так, чтобы одна дуга как можно ближе прошла по двум прежним
+    function bez(a, b, c, d, t) { var u = 1 - t; return [0, 1, 2].map(function (k) { return u * u * u * a[k] + 3 * u * u * t * b[k] + 3 * u * t * t * c[k] + t * t * t * d[k]; }); }
+    function del(o) {
+      var A = o.P[i - 1], B = o.P[i + 1], old = [], k, j;
+      for (k = 1; k < 20; k++) old.push(bez(o.P[i - 1], o.T2[i - 1], o.T1[i], o.P[i], k / 20));
+      for (k = 0; k < 20; k++) old.push(bez(o.P[i], o.T2[i], o.T1[i + 1], o.P[i + 1], k / 20));
+      var d1 = [0, 1, 2].map(function (q) { return o.T2[i - 1][q] - A[q]; }), d2 = [0, 1, 2].map(function (q) { return o.T1[i + 1][q] - B[q]; });
+      var n1 = Math.hypot(d1[0], d1[1], d1[2]) || 1, n2 = Math.hypot(d2[0], d2[1], d2[2]) || 1;
+      d1 = d1.map(function (v) { return v / n1; }); d2 = d2.map(function (v) { return v / n2; });
+      function err(l1, l2) {
+        var h1 = [0, 1, 2].map(function (q) { return A[q] + d1[q] * l1; }), h2 = [0, 1, 2].map(function (q) { return B[q] + d2[q] * l2; });
+        var cur = []; for (k = 0; k <= 60; k++) cur.push(bez(A, h1, h2, B, k / 60));
+        var e = 0;
+        old.forEach(function (p) { var m = Infinity; cur.forEach(function (q) { m = Math.min(m, (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]) + (p[2] - q[2]) * (p[2] - q[2])); }); e += m; });
+        return e;
+      }
+      var chord = Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]), l1 = chord / 3, l2 = chord / 3, st = chord / 6, e0 = err(l1, l2);
+      for (j = 0; j < 60 && st > chord * 1e-4; j++) {
+        var moved = false;
+        [[st, 0], [-st, 0], [0, st], [0, -st]].forEach(function (dd) {
+          var a1 = Math.max(chord * 0.02, l1 + dd[0]), a2 = Math.max(chord * 0.02, l2 + dd[1]), e1 = err(a1, a2);
+          if (e1 < e0) { e0 = e1; l1 = a1; l2 = a2; moved = true; }
+        });
+        if (!moved) st /= 2;
+      }
+      for (k = 0; k < 3; k++) { o.T2[i - 1][k] = A[k] + d1[k] * l1; o.T1[i + 1][k] = B[k] + d2[k] * l2; }
+      ['P', 'T1', 'T2', 'ctype', 'ttype', 'free'].forEach(function (g) { if (o[g]) o[g].splice(i, 1); });
+    }
+    del(c);
+    if (key === 'deck' && this.deck0.P.length > c.P.length) del(this.deck0);
+    if (key === 'thick' && this.diffB && this.diffB.P.length > c.P.length) { del(this.diffB); this._diff0(); }
+    if (key === 'bot' || key === 'thick') this.regenDeck();
+    this.sync(); this.renormSlices(); this.sync(); this.dirty = true; this.everEdited = true;
+    return true;
+  };
+
+  // тип точки: 'smooth' — касательные на одной прямой, 'corner' — излом (независимые), 'axis' — горизонтальная
+  // (в сечении — вертикальная) касательная
+  E.prototype.setType = function (key, i, type) {
+    var c = this.curve(key); if (!c) return;
+    var slice = key.indexOf('slice:') === 0, iu = slice ? 1 : 0, iv = key === 'otl' ? 1 : 2, n = c.P.length, P = c.P[i];
+    c.free = c.free || c.P.map(function () { return false; });
+    c.ttype = c.ttype || c.P.map(function () { return 0; });
+    c.free[i] = type === 'corner';
+    if (type === 'axis' || type === 'smooth') {
+      var a = i > 0 ? c.T1[i] : null, b = i < n - 1 ? c.T2[i] : null;
+      var la = a ? Math.hypot(a[iu] - P[iu], a[iv] - P[iv]) : 0, lb = b ? Math.hypot(b[iu] - P[iu], b[iv] - P[iv]) : 0;
+      var du, dv;
+      if (type === 'axis') { if (slice) { du = 0; dv = 1; } else { du = 1; dv = 0; } }
+      else {
+        du = (b ? b[iu] - P[iu] : 0) - (a ? a[iu] - P[iu] : 0); dv = (b ? b[iv] - P[iv] : 0) - (a ? a[iv] - P[iv] : 0);
+        var l = Math.hypot(du, dv) || 1; du /= l; dv /= l;
+      }
+      if (type === 'axis' && slice && b && b[iv] < P[iv]) dv = -1;
+      if (a) { a[iu] = P[iu] - du * la; a[iv] = P[iv] - dv * la; }
+      if (b) { b[iu] = P[iu] + du * lb; b[iv] = P[iv] + dv * lb; }
+      c.ttype[i] = type === 'axis' ? 16 : 0;
+    }
+    if (key === 'bot' || key === 'thick') this.regenDeck();
+    this.sync(); this.dirty = true; this.everEdited = true;
+  };
+  E.prototype.typeOf = function (key, i) {
+    var c = this.curve(key); if (!c) return 'smooth';
+    if (c.free && c.free[i]) return 'corner';
+    if (c.ttype && c.ttype[i] === 16) return 'axis';
+    return 'smooth';
+  };
+
+  // ---------- сечения: добавить, удалить, сдвинуть ----------
+  E.prototype.addSlice = function (model, x) {
+    var b = this.b, k = 0;
+    while (k < b.slices.length && b.slices[k].P[0][0] < x) k++;
+    if (k === 0 || k >= b.slices.length) return -1;
+    if (Math.abs(b.slices[k].P[0][0] - x) < 0.5 || Math.abs(b.slices[k - 1].P[0][0] - x) < 0.5) return -1;
+    var src = b.slices[k - 1], cc = model.sectionCtrl(x);
+    function pts(A) { return A.map(function (p) { return [x, p[0], p[1]]; }); }
+    var c = new TS.Curve(pts(cc.P), pts(cc.T1), pts(cc.T2), src.ctype.slice(), src.name);
+    c.ttype = src.ttype ? src.ttype.slice() : null;
+    c.wrap = src.wrap.cloneNode(true);
+    c.node = c.wrap.getElementsByTagName('Bezier3d')[0];
+    b.slices.splice(k, 0, c);
+    this.dirty = true; this.everEdited = true;
+    return k;
+  };
+  E.prototype.deleteSlice = function (k) {
+    var b = this.b;
+    if (k <= 0 || k >= b.slices.length - 1) return false;     // хвост и нос не удаляются
+    b.slices.splice(k, 1);
+    this.dirty = true; this.everEdited = true;
+    return true;
+  };
+  E.prototype.moveSlice = function (k, x) {
+    var b = this.b, s = b.slices[k];
+    if (k <= 0 || k >= b.slices.length - 1) return false;
+    var lo = b.slices[k - 1].P[0][0] + 0.5, hi = b.slices[k + 1].P[0][0] - 0.5;
+    x = Math.max(lo, Math.min(hi, x));
+    [s.P, s.T1, s.T2].forEach(function (A) { A.forEach(function (p) { p[0] = x; }); });
+    this.renormSlices(); this.dirty = true; this.everEdited = true;
+    return x;
   };
 
   TS.Editor = E;

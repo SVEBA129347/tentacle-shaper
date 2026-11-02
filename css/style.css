@@ -154,3 +154,12 @@ body.no-rm .rm { display: none; }
 .dlgbtns { display: flex; gap: 8px; justify-content: flex-end; margin: 12px 0 8px; }
 .volrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .muted { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+.ptypes { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.ptypes button { font-size: 11px; padding: 2px 7px; }
+.ptypes button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+button.danger { color: #c92a2a; }
+.slbtns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.slbtns button { font-size: 12px; padding: 3px 8px; }
+.slbtns input { width: 80px; font: inherit; padding: 2px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
+.slbtns button:disabled { opacity: .4; }

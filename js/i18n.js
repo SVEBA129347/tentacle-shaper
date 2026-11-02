@@ -44,8 +44,10 @@
       apply: 'Применить', cancel: 'Отмена', close: 'Закрыть', volTitle: 'Подбор объёма', volNow: 'Сейчас', volT: 'толщиной', volW: 'шириной',
       volTW: 'толщиной и шириной', volGo: 'Подобрать', volBusy: 'Считаю…', volFail: 'Не получается в пределах ±40 % размера.', volDone: 'Готово:',
       smartTitle: 'Задать размер в точке', smAt: 'на', smMoved: 'сдвинута точка', smHint: 'Двигается ближайшая опорная точка кривой (контур, верх или низ стрингера); остальная доска плавно подстраивается. Ctrl+Z — отмена.',
+      tSmooth: 'Плавная', tCorner: 'Излом', tAxis: 'Горизонт./верт.', delPt: 'Удалить точку', slAdd: '+ Сечение здесь', slDel: 'Удалить сечение', slX: 'X сечения',
+      noPtSlice: 'В сечениях точки не добавляются: у всех сечений должно быть одинаковое число точек.',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
-      editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Alt при перетаскивании касательной — излом. Esc — снять выбор.'
+      editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Двойной щелчок по линии — новая точка, Del — удалить точку. Esc — снять выбор.'
     },
     en: {
       open: 'Open .s3dx', design: 'Design', view3d: '3D',
@@ -89,8 +91,10 @@
       apply: 'Apply', cancel: 'Cancel', close: 'Close', volTitle: 'Volume wizard', volNow: 'Now', volT: 'by thickness', volW: 'by width',
       volTW: 'by thickness and width', volGo: 'Fit', volBusy: 'Computing…', volFail: 'Not reachable within ±40 % of size.', volDone: 'Done:',
       smartTitle: 'Set a size at a point', smAt: 'at', smMoved: 'moved point', smHint: 'The nearest control point of the curve (outline, stringer top or bottom) moves; the rest of the board follows smoothly. Ctrl+Z to undo.',
+      tSmooth: 'Smooth', tCorner: 'Corner', tAxis: 'Horiz./vert.', delPt: 'Delete point', slAdd: '+ Slice here', slDel: 'Delete slice', slX: 'Slice X',
+      noPtSlice: 'Points are not added to slices: all slices must have the same number of points.',
       deckFit: 'Stringer top approximated by a Bezier curve within',
-      editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Alt while dragging a tangent — break it. Esc — deselect.'
+      editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Double click on a curve adds a point, Del deletes it. Esc — deselect.'
     }
   };
   var lang = 'ru';
