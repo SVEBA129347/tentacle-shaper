@@ -163,3 +163,11 @@ button.danger { color: #c92a2a; }
 .slbtns button { font-size: 12px; padding: 3px 8px; }
 .slbtns input { width: 80px; font: inherit; padding: 2px 5px; border: 1px solid var(--line); border-radius: 5px; text-align: right; }
 .slbtns button:disabled { opacity: .4; }
+
+button.toggle.on { background: #e7f1fb; border-color: #74a9d8; }
+/* шапка: не переносить подписи кнопок, при нехватке места — перенос строкой */
+.bar { flex-wrap: wrap; gap: 6px 8px; }
+.bar button { white-space: nowrap; padding: 4px 8px; }
+.bar .msg { font-size: 11px; max-width: 240px; line-height: 1.2; }
+@media (max-width: 1520px) { .brand { font-size: 0; gap: 0; } }
+.bar .msg { max-width: 200px; overflow: hidden; }

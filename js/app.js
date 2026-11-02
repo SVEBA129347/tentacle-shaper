@@ -61,6 +61,57 @@
     });
   }
 
+  // ---------- гребёнка кривизны и исходная форма ----------
+  // кривизна кривой Безье в плоскости вида (iu, iv) — по аналитическим производным
+  function comb(v, c, iu, iv, sign, color) {
+    if (!st.showCurv || !c) return;
+    var pts = [], kmax = 0;
+    for (var i = 0; i < c.P.length - 1; i++) {
+      var a = c.P[i], b = c.T2[i], cc = c.T1[i + 1], d = c.P[i + 1];
+      for (var k = 0; k <= 24; k++) {
+        var t = k / 24, u = 1 - t;
+        var x = u * u * u * a[iu] + 3 * u * u * t * b[iu] + 3 * u * t * t * cc[iu] + t * t * t * d[iu];
+        var y = u * u * u * a[iv] + 3 * u * u * t * b[iv] + 3 * u * t * t * cc[iv] + t * t * t * d[iv];
+        var dx = 3 * (u * u * (b[iu] - a[iu]) + 2 * u * t * (cc[iu] - b[iu]) + t * t * (d[iu] - cc[iu]));
+        var dy = 3 * (u * u * (b[iv] - a[iv]) + 2 * u * t * (cc[iv] - b[iv]) + t * t * (d[iv] - cc[iv]));
+        var ddx = 6 * (u * (cc[iu] - 2 * b[iu] + a[iu]) + t * (d[iu] - 2 * cc[iu] + b[iu]));
+        var ddy = 6 * (u * (cc[iv] - 2 * b[iv] + a[iv]) + t * (d[iv] - 2 * cc[iv] + b[iv]));
+        var sp = Math.hypot(dx, dy) || 1e-9, kap = (dx * ddy - dy * ddx) / (sp * sp * sp);
+        pts.push({ x: x * 10, y: sign * y * 10, nx: -dy / sp, ny: sign * dx / sp, k: kap * sign });
+        kmax = Math.max(kmax, Math.abs(kap));
+      }
+    }
+    if (!kmax) return;
+    var ctx = v.ctx, scale = 40 / kmax;     // самая крутая точка — 40 пикселей
+    ctx.strokeStyle = color || 'rgba(194,37,92,0.55)'; ctx.lineWidth = 1; ctx.beginPath();
+    var tip = [];
+    pts.forEach(function (p) {
+      var s0 = v.toScreen(p.x, p.y), L = -p.k * scale;
+      var e = [s0[0] + p.nx * L, s0[1] - p.ny * L];
+      ctx.moveTo(s0[0], s0[1]); ctx.lineTo(e[0], e[1]); tip.push(e);
+    });
+    ctx.stroke(); ctx.beginPath();
+    tip.forEach(function (e, i) { if (i) ctx.lineTo(e[0], e[1]); else ctx.moveTo(e[0], e[1]); });
+    ctx.stroke();
+  }
+  var REF = 'rgba(25,113,194,0.55)';
+  function refTop(v) {
+    if (!st.showOrig || !st.refModel || !st.ed || !st.ed.everEdited) return;
+    var o = st.refModel.board.otl.sample(80).map(function (p) { return [p[0] * 10, p[1] * 10]; });
+    v.poly(o, { stroke: REF, width: 1.2, dash: [5, 3] }); v.poly(o.map(function (p) { return [p[0], -p[1]]; }), { stroke: REF, width: 1.2, dash: [5, 3] });
+  }
+  function refSide(v) {
+    if (!st.showOrig || !st.refModel || !st.ed || !st.ed.everEdited) return;
+    var rb = st.refModel.board;
+    if (st.sideMode === 'thick') { if (rb.thickDiff) v.poly(rb.thickDiff.sample(80).map(function (p) { return [p[0] * 10, p[2] * 10]; }), { stroke: REF, width: 1.2, dash: [5, 3] }); return; }
+    [rb.strbot, rb.strdeck].forEach(function (c) { v.poly(c.sample(80).map(function (p) { return [p[0] * 10, p[2] * 10]; }), { stroke: REF, width: 1.2, dash: [5, 3] }); });
+  }
+  function refSlice(v) {
+    if (!st.showOrig || !st.refModel || !st.ed || !st.ed.everEdited) return;
+    var x = Math.min(st.secX, st.refModel.L), h = st.refModel.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
+    v.poly(h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; })), { stroke: REF, width: 1.2, dash: [5, 3] }, true);
+  }
+
   // ---------- вид сверху ----------
   function drawTop(ctx, v) {
     var g = st.geo; v.grid(); if (!g) return;
@@ -78,6 +129,8 @@
     });
     var cx = st.secX * 10, cw = st.model.halfW(st.secX) * 10;
     v.poly([[cx, -cw - 15], [cx, cw + 15]], { stroke: C.cur, width: 2 });
+    refTop(v);
+    comb(v, st.board.otl, 0, 1, 1); comb(v, st.board.otl, 0, 1, -1);
     drawHandles(v, 'otl', 1);
   }
 
@@ -89,6 +142,7 @@
       v.poly(area, { fill: C.fill }, true);
       v.poly(g.thick, { stroke: C.line, width: 1.8 });
       v.poly([[0, 0], [g.S, 0]], { stroke: '#9aa7b2', width: 1 });
+      refSide(v); comb(v, st.board.thickDiff, 0, 2, 1);
       drawHandles(v, 'thick', 1);
     } else {
       v.poly(g.side, { fill: C.fill, stroke: C.line, width: 1.8 }, true);
@@ -100,6 +154,7 @@
       });
       var cx = st.secX * 10;
       v.poly([[cx, st.model.zb(st.secX) * 10 - 8], [cx, st.model.zd(st.secX) * 10 + 8]], { stroke: C.cur, width: 2 });
+      refSide(v); comb(v, st.board.strbot, 0, 2, 1); comb(v, st.board.strdeck, 0, 2, 1);
       drawHandles(v, 'bot', 1);
       drawHandles(v, 'deck', 1);
     }
@@ -114,7 +169,8 @@
     var h = m.section(x, 40).map(function (p) { return [p[0] * 10, p[1] * 10]; });
     var full = h.concat(h.slice(0, -1).reverse().map(function (p) { return [-p[0], p[1]]; }));
     v.poly(full, { fill: C.fill, stroke: C.line, width: 1.8 }, true);
-    if (k >= 0) drawHandles(v, 'slice:' + k, 1);
+    refSlice(v);
+    if (k >= 0) { comb(v, st.board.slices[k], 1, 2, 1); drawHandles(v, 'slice:' + k, 1); }
     else {
       var c = m.sectionCtrl(x);
       for (var i = 0; i < m.nPts; i++) v.dot(c.P[i][0] * 10, c.P[i][1] * 10, 3, i === m.apexIdx ? C.apex : '#868e96', true);
@@ -475,6 +531,9 @@
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
+    st.showOrig = true;
+    $('curvBtn').addEventListener('click', function () { st.showCurv = !st.showCurv; $('curvBtn').classList.toggle('on', st.showCurv); if (st.model) redraw2d(); });
+    $('origBtn').addEventListener('click', function () { st.showOrig = !st.showOrig; $('origBtn').classList.toggle('on', st.showOrig); if (st.model) redraw2d(); });
     $('slAdd').addEventListener('click', function () {
       st.ed.begin(); var k = st.ed.addSlice(st.model, st.secX);
       if (k < 0) { st.ed.undo.pop(); return; }
@@ -529,6 +588,8 @@
       if (mod && (k === 'y' || k === 'н')) { e.preventDefault(); if (st.ed.doRedo()) heavy(); return; }
       if (k === 'Escape') { st.ed.sel = null; showSel(); redraw2d(); return; }
       if ((k === 'Delete' || k === 'Backspace') && st.ed.sel) { e.preventDefault(); delSelected(); return; }
+      if (!mod && (k === 'k' || k === 'K' || k === 'л' || k === 'Л')) { $('curvBtn').click(); return; }
+      if (!mod && (k === 'o' || k === 'O' || k === 'щ' || k === 'Щ')) { $('origBtn').click(); return; }
       var step = (e.shiftKey ? 1 : 0.1) / 10, d = null;   // 0.1 мм, с Shift — 1 мм
       if (k === 'ArrowLeft') d = [-step, 0]; else if (k === 'ArrowRight') d = [step, 0];
       else if (k === 'ArrowUp') d = [0, step]; else if (k === 'ArrowDown') d = [0, -step];

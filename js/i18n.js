@@ -46,6 +46,7 @@
       smartTitle: 'Задать размер в точке', smAt: 'на', smMoved: 'сдвинута точка', smHint: 'Двигается ближайшая опорная точка кривой (контур, верх или низ стрингера); остальная доска плавно подстраивается. Ctrl+Z — отмена.',
       tSmooth: 'Плавная', tCorner: 'Излом', tAxis: 'Горизонт./верт.', delPt: 'Удалить точку', slAdd: '+ Сечение здесь', slDel: 'Удалить сечение', slX: 'X сечения',
       noPtSlice: 'В сечениях точки не добавляются: у всех сечений должно быть одинаковое число точек.',
+      curvBtn: 'Кривизна', curvTip: 'Гребёнка кривизны правимых линий (K)', origBtn: 'Исходная', origTip: 'Форма на момент открытия/сохранения — голубым (O)',
       deckFit: 'Верх стрингера приближён кривой Безье с точностью',
       editHint: 'Стрелки — сдвиг на 0.1 мм, с Shift — на 1 мм. Двойной щелчок по линии — новая точка, Del — удалить точку. Esc — снять выбор.'
     },
@@ -93,6 +94,7 @@
       smartTitle: 'Set a size at a point', smAt: 'at', smMoved: 'moved point', smHint: 'The nearest control point of the curve (outline, stringer top or bottom) moves; the rest of the board follows smoothly. Ctrl+Z to undo.',
       tSmooth: 'Smooth', tCorner: 'Corner', tAxis: 'Horiz./vert.', delPt: 'Delete point', slAdd: '+ Slice here', slDel: 'Delete slice', slX: 'Slice X',
       noPtSlice: 'Points are not added to slices: all slices must have the same number of points.',
+      curvBtn: 'Curvature', curvTip: 'Curvature comb of edited curves (K)', origBtn: 'Original', origTip: 'Shape at open/save time in light blue (O)',
       deckFit: 'Stringer top approximated by a Bezier curve within',
       editHint: 'Arrows move 0.1 mm, with Shift 1 mm. Double click on a curve adds a point, Del deletes it. Esc — deselect.'
     }
