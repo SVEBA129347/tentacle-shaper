@@ -941,6 +941,9 @@
     if (t === '3d' && st.model && !st.viewed3d) { st.viewed3d = true; v3.resetView(); }
     if (t === 'cnc' && st.model) TS.cncUI.show();
     if (t === 'hydro' && st.model) TS.hydroUI.show();
+    if (t === 'fin') TS.finUI.show();
+    // страницы, которыми делятся ссылкой: адрес …/#fin
+    try { history.replaceState(null, '', t === 'fin' ? '#fin' : location.pathname + location.search); } catch (e) { /* file:// */ }
   }
 
   function init() {
@@ -990,6 +993,7 @@
     TS.actionsUI.init();
     TS.printUI.init();
     TS.hydroUI.init();
+    TS.finUI.init();
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
@@ -1079,7 +1083,7 @@
     for (var j = 0; j < lb.length; j++) lb[j].addEventListener('click', function (e) {
       TS.setLang(e.currentTarget.getAttribute('data-l')); markLang();
       if (st.model) { renderDims(); setSecX(st.secX); showSel(); }
-      TS.cncUI.lang(); TS.hydroUI.lang();
+      TS.cncUI.lang(); TS.hydroUI.lang(); TS.finUI.lang();
     });
     markLang();
 
@@ -1137,7 +1141,7 @@
       if (st.ed && st.ed.dirty) { e.preventDefault(); e.returnValue = ''; }
     });
     window.addEventListener('resize', function () { if (st.model) { vTop.fitted = vSide.fitted = vSlice.fitted = false; redraw2d(); } });
-    setTab('design');
+    setTab(location.hash === '#fin' ? 'fin' : 'design');
   }
   function markLang() {
     var lb = document.querySelectorAll('.lang button');

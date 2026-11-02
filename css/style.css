@@ -232,3 +232,31 @@ body.loaded .status .hint { display: none; }
 button.toggle.on { background: var(--brand-soft); border-color: var(--brand-line); }
 .herobtns { margin: 4px 0 14px; }
 button.big { font-size: 15px; padding: 9px 18px; border-radius: 9px; }
+
+/* ---------- страница «Плавник-насос» ---------- */
+body:not([data-tab="fin"]) .only-fin { display: none; }
+body[data-tab="fin"] .empty, body[data-tab="fin"] .work { display: none !important; }
+.page { position: absolute; inset: 0; overflow: auto; background: var(--bg); }
+.fin-wrap { max-width: 1040px; margin: 0 auto; padding: 28px 24px 48px; }
+.fin-head { display: flex; gap: 20px; align-items: center; margin-bottom: 18px; }
+.fin-badge { height: 96px; width: auto; flex: none; }
+.fin-head h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -.2px; }
+.fin-head .lead { font-size: 16px; line-height: 1.5; margin: 0; max-width: 66ch; color: #333; }
+.fin-stage { background: #000; border-radius: 14px; overflow: hidden; }
+.fin-stage svg#finSvg { display: block; width: 100%; height: auto; background: #f6f6f1; }
+.fin-ctl { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; padding: 14px 18px; color: var(--foam); }
+.fin-ctl label { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.fin-ctl input[type=range] { width: 260px; accent-color: #f2e400; }
+.fin-ctl b { color: #fff; min-width: 64px; }
+.fin-num { display: flex; align-items: baseline; gap: 12px; }
+.fin-num b { font-size: 30px; color: #f2e400; }
+.fin-num span { font-size: 13px; color: #b9b6a0; }
+.fin-cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; margin-top: 26px; }
+.fin-cols h2 { font-size: 18px; margin: 0 0 10px; }
+.fin-cols p { font-size: 14px; line-height: 1.55; max-width: 62ch; }
+.fin-steps { margin: 0 0 22px; padding-left: 22px; font-size: 14px; line-height: 1.55; }
+.fin-steps li { margin-bottom: 6px; }
+.finchart { width: 100%; max-width: 360px; height: auto; font: 11px "Golos Text", system-ui, sans-serif; fill: #6b6b63; }
+.fin-cols .small { font-size: 12px; color: var(--muted); }
+.fin-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+@media (max-width: 760px) { .fin-cols { grid-template-columns: 1fr; } .fin-head { flex-direction: column; align-items: flex-start; } .fin-badge { height: 72px; } }
