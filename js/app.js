@@ -1012,7 +1012,7 @@
     if (t === 'fin') TS.finUI.show();
     if (t === 'foil') TS.foilUI.show();
     // страницы, которыми делятся ссылкой: адрес …/#fin, …/#foil
-    try { history.replaceState(null, '', (t === 'fin' || t === 'foil' || t === 'culture') ? '#' + t : location.pathname + location.search); } catch (e) { /* file:// */ }
+    try { history.replaceState(null, '', t === 'culture' ? location.pathname + location.search : '#' + t); } catch (e) { /* file:// */ }
   }
 
   function init() {
@@ -1064,6 +1064,7 @@
     TS.hydroUI.init();
     TS.finUI.init();
     TS.foilUI.init(); TS.cultureUI.init();
+    TS.goTab = setTab;
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);
@@ -1213,8 +1214,10 @@
     });
     window.addEventListener('resize', function () { if (st.model) { vTop.fitted = vSide.fitted = vSlice.fitted = false; redraw2d(); } });
     // на домене tentacle.surf первой открывается Good Vibes Department
-    var home = /tentacle\.surf$/.test(location.hostname) ? 'culture' : 'design';
-    setTab(location.hash === '#fin' ? 'fin' : location.hash === '#foil' ? 'foil' : location.hash === '#culture' ? 'culture' : location.hash === '#design' ? 'design' : home);
+    // главная — Good Vibes Department; остальные вкладки открываются по адресу …/#design, #fin, #foil и т. д.
+    var hTab = location.hash.slice(1);
+    setTab(document.querySelector('.tab[data-tab="' + hTab + '"]') ? hTab : 'culture');
+    window.addEventListener('hashchange', function () { var h = location.hash.slice(1) || 'culture'; if (document.querySelector('.tab[data-tab="' + h + '"]') && document.body.getAttribute('data-tab') !== h) setTab(h); });
   }
   function markLang() {
     var lb = document.querySelectorAll('.lang button');

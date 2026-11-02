@@ -131,6 +131,10 @@
         '<p class="lead">' + TS.t('cuLead') + '</p></div></div>' +
       '<div class="cu-book"><div class="cu-photo" id="cuPhoto"><span>' + TS.t('cuPhoto') + '</span></div>' +
         '<div><h2>' + TS.t('cuStoryT') + '</h2><p>' + TS.t('cuStory') + '</p></div></div>' +
+      '<h2 class="cu-h2">' + TS.t('cuWorkT') + '</h2><div class="cu-work">' +
+        '<button data-go="design"><b>' + TS.t('cuW1') + ' →</b><span>' + TS.t('cuW1t') + '</span></button>' +
+        '<button data-go="fin"><b>' + TS.t('cuW2') + ' →</b><span>' + TS.t('cuW2t') + '</span></button>' +
+        '<button data-go="foil"><b>' + TS.t('cuW3') + ' →</b><span>' + TS.t('cuW3t') + '</span></button></div>' +
       tonyBlock() +
       '<div class="cu-head"><h2>' + TS.t('cuColT') + '</h2><div class="fin-btns"><a class="btnlink primary" href="' + suggestUrl() + '" target="_blank" rel="noopener">' + TS.t('cuAdd') + '</a><button id="cuCopy">' + TS.t('finCopy') + '</button></div></div>' +
       '<p class="small">' + TS.t('cuRules') + '</p>' +
@@ -140,8 +144,10 @@
     var im = new Image();
     im.onload = function () { var ph = $('cuPhoto'); if (ph) { ph.innerHTML = ''; im.alt = 'Captain Goodvibes'; ph.appendChild(im); ph.classList.add('has'); } };
     im.src = 'img/culture/goodvibes-book.jpg';
+    var gos = el.querySelectorAll('[data-go]');
+    for (var gi = 0; gi < gos.length; gi++) gos[gi].addEventListener('click', function () { if (TS.goTab) TS.goTab(this.getAttribute('data-go')); });
     $('cuCopy').addEventListener('click', function () {
-      var url = location.href.split('#')[0] + '#culture';
+      var url = location.href.split('#')[0];
       try { navigator.clipboard.writeText(url); this.textContent = TS.t('finCopied'); } catch (e) { prompt('', url); }
     });
   }

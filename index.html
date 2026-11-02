@@ -3,19 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tentacle Surf · Shaper</title>
-<meta name="description" content="Open board CAD/CAM for surf and wake-surf boards. Reads Shape3D X .s3dx files.">
+<title>Tentacle Surf · Good Vibes Department</title>
+<meta name="description" content="Tentacle Surf — Good Vibes Department: история, серф-культура и бесплатная мастерская — проектирование досок, плавник-насос, фойл.">
+<meta property="og:title" content="Tentacle Surf · Good Vibes Department">
+<meta property="og:description" content="История, серф-культура и бесплатная мастерская: проектирование досок, плавник-насос, фойл.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
 <link rel="icon" href="img/favicon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-tab="design">
+<body data-tab="culture">
 <header class="topbar">
   <a class="brand" href="https://tentaclesurf.com" target="_blank" rel="noopener" title="tentaclesurf.com">
     <img class="badge" src="img/badge.svg" alt="Tentacle Surf" width="34" height="40">
   </a>
+  <div class="tools">
   <button id="openBtn" class="primary" data-i18n="open">Открыть .s3dx</button>
   <button id="newBtn" data-i18n="newBoard" data-i18n-title="newBoardT">Новая доска</button>
   <input id="file" type="file" accept=".s3dx" hidden>
@@ -41,16 +44,17 @@
     </div>
   </div>
   <button id="printBtn" class="needs-board" data-i18n="printBtn">Печать…</button>
+  </div>
   <div class="spacer"></div>
   <span id="msg" class="msg"></span>
   <nav class="tabs">
-    <button class="tab on" data-tab="design" data-i18n="design">Проектирование</button>
+    <button class="tab tab-page" data-tab="culture" data-i18n="cuTab">Good Vibes</button>
+    <button class="tab" data-tab="design" data-i18n="design">Проектирование</button>
     <button class="tab" data-tab="3d" data-i18n="view3d">3D</button>
     <button class="tab" data-tab="hydro" data-i18n="hydro">Вода</button>
     <button class="tab" data-tab="cnc" data-i18n="cnc">CNC</button>
     <button class="tab tab-page" data-tab="fin" data-i18n="finTab">Плавник-насос</button>
     <button class="tab tab-page" data-tab="foil" data-i18n="foTab">Фойл</button>
-    <button class="tab tab-page" data-tab="culture" data-i18n="cuTab">Серф-культура</button>
   </nav>
   <div class="lang"><button data-l="ru">RU</button><button data-l="en">EN</button></div>
 </header>

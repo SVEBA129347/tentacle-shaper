@@ -330,3 +330,13 @@ a.btnlink.primary { background: var(--brand); border-color: var(--brand-line); f
 .cu-time li { display: grid; grid-template-columns: 120px 1fr; gap: 14px; background: rgba(255,255,255,.55); border-radius: 8px; padding: 8px 12px; line-height: 1.5; font-size: 14px; }
 .cu-tony .small { color: #4a4500; margin: 10px 0 0; }
 @media (max-width: 760px) { .cu-time li { grid-template-columns: 1fr; gap: 2px; } }
+
+/* инструменты шапки — только в мастерской; на страницах Good Vibes, плавника и фойла их нет */
+.tools { display: contents; }
+body[data-tab="culture"] .tools, body[data-tab="fin"] .tools, body[data-tab="foil"] .tools { display: none; }
+.cu-work { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 0 0 28px; }
+.cu-work button { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; font: inherit; color: inherit; }
+.cu-work button:hover { border-color: var(--brand-line); box-shadow: 0 0 0 3px var(--brand-soft); }
+.cu-work b { display: block; font-size: 17px; margin-bottom: 4px; }
+.cu-work span { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.cu-h2 { margin: 0 0 12px; }
