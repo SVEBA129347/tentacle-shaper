@@ -21,7 +21,7 @@
 
   // f: {kx, ky, kt, ktr, knr} — множители длины, ширины, толщины, рокера хвоста и носа
   TS.resizeApply = function (b, ed, f) {
-    var L = b.length, cv = curves(b, ed), last = b.slices[0].P.length - 1;
+    var L = b.length, cv = curves(b, ed), last = b.slices[0].P.length - 1, rec = TS.boxRecord(b);
     // кривые-копии (низ и верх стрингера в side), их заменит sync
     var sideOther = cv.side.filter(function (o) { return o.k !== 0 && o.k !== last; }).map(function (o) { return o.c; });
 
@@ -50,6 +50,7 @@
     ed.sync();
     ed._baseThickness();
     ed.renormSlices(); ed.sync();
+    TS.boxFollow(b, rec);
     ed.dirty = true; ed.everEdited = true;
   };
 

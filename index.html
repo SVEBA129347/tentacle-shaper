@@ -27,6 +27,7 @@
       <button id="sizeBtn" data-i18n="sizeBtn">Размеры…</button>
       <button id="smartBtn" data-i18n="smartBtn">Задать в точке…</button>
       <button id="actBtn" data-i18n="actBtn">Действия…</button>
+      <button id="finsBtn" data-i18n="finsBtn">Плавники и пробки…</button>
       <hr>
       <button id="ghostBtn" class="toggle" data-i18n="ghostBtn" data-i18n-title="ghostTip">Сравнить…</button>
       <input id="ghostFile" type="file" accept=".s3dx" hidden>
@@ -125,17 +126,25 @@
       <h3 data-i18n="boxTitle">Пробки плавников</h3>
       <div id="boxList" class="chips"></div>
       <div id="boxForm" class="form boxform" hidden>
+        <label><span data-i18n="bxName">Имя</span><input data-b="name" type="text" maxlength="24"></label>
         <label><span data-i18n="bxX">Центр от хвоста</span><input data-b="x" type="number" step="1"></label>
-        <label><span data-i18n="bxY">От оси</span><input data-b="y" type="number" step="1"></label>
+        <label><span data-i18n="bxXn">Центр от носа</span><input data-b="xn" type="number" step="1"></label>
+        <label class="nr"><span data-i18n="bxY">От оси</span><input data-b="y" type="number" step="1"></label>
+        <label class="nr"><span data-i18n="bxRail" data-i18n-title="bxRailT">До рейла</span><input data-b="rail" type="number" step="0.5"></label>
         <label><span data-i18n="bxLen">Длина</span><input data-b="len" type="number" step="0.5"></label>
         <label><span data-i18n="bxWid">Ширина</span><input data-b="wid" type="number" step="0.5"></label>
         <label><span data-i18n="bxDepth">Глубина</span><input data-b="depth" type="number" step="0.5"></label>
-        <label><span data-i18n="bxToe">Развал, °</span><input data-b="ang" type="number" step="0.1"></label>
-        <label class="chk"><input data-b="even" type="checkbox"> <span data-i18n="bxEven">Пара (слева и справа)</span></label>
+        <label class="nr"><span data-i18n="bxToe">Развал, °</span><input data-b="ang" type="number" step="0.1"></label>
+        <label class="nr"><span data-i18n="bxConv" data-i18n-title="bxConvT">Схождение</span><input data-b="conv" type="number" step="10"></label>
+        <label><span data-i18n="bxFace">Сторона</span><select data-b="face"><option value="1" data-i18n="bxBot">дно</option><option value="0" data-i18n="bxDeck">палуба</option></select></label>
+        <label><span data-i18n="bxFixL">По длине держится</span><select data-b="fixL"><option value="tail" data-i18n="bxTail">хвоста</option><option value="nose" data-i18n="bxNose">носа</option><option value="prop" data-i18n="bxProp">пропорционально</option></select></label>
+        <label class="nr"><span data-i18n="bxFixW">По ширине держится</span><select data-b="fixW"><option value="rail" data-i18n="bxRailO">рейла</option><option value="center" data-i18n="bxAxis">оси</option><option value="prop" data-i18n="bxProp">пропорционально</option></select></label>
+        <label class="chk nr"><input data-b="even" type="checkbox"> <span data-i18n="bxEven">Пара (слева и справа)</span></label>
+        <label class="chk"><input data-b="central" type="checkbox"> <span data-i18n="bxCentral">По оси (центральная)</span></label>
         <label class="chk"><input data-b="cut" type="checkbox"> <span data-i18n="bxCut">Фрезеровать на станке</span></label>
         <div class="slbtns"><button id="boxDel" class="danger" data-i18n="bxDel">Удалить пробку</button></div>
       </div>
-      <div class="slbtns"><button id="boxAdd" data-i18n="bxAdd">+ Пробка</button></div>
+      <div class="slbtns"><button id="boxAdd" data-i18n="bxAdd">+ Пробка</button><button id="boxWiz" data-i18n="finsBtn">Плавники и пробки…</button></div>
       <h3 data-i18n="barsTitle">Мерные линейки</h3>
       <div class="slbtns"><input id="barD" type="number" step="10" value="300"> <span data-i18n="mm">мм</span>
         <select id="barFrom"><option value="tail" data-i18n="fromTail">от хвоста</option><option value="nose" data-i18n="fromNose">от носа</option></select>
@@ -214,6 +223,31 @@
   </div>
 </div>
 
+<div id="dlgFins" class="dlg" hidden>
+  <div class="dlgbox">
+    <h3 data-i18n="fwTitle">Плавники и пробки</h3>
+    <div class="muted" data-i18n="fwHint">X — центр пробки от хвоста. «До рейла» и «схождение» меряются как в Shape3D — от опорной точки пробки.</div>
+    <h4 data-i18n="fwSetT">Схема</h4>
+    <div id="fwSet" class="chips"><button class="chip" data-set="single" data-i18n="fwSingle">Сингл</button><button class="chip" data-set="twin" data-i18n="fwTwin">Твин</button><button class="chip" data-set="thruster" data-i18n="fwThr">Трастер / 2+1</button><button class="chip" data-set="quad" data-i18n="fwQuad">Квад</button><button class="chip" data-set="five" data-i18n="fwFive">4+1</button></div>
+    <h4 data-i18n="fwBoxT">Пробка, мм</h4>
+    <div class="volrow"><select id="fwSys"><option value="file" data-i18n="fwFile">как в этой доске</option><option value="ds133" data-i18n="fwDs">Tentaclesurf, как в DS 133 (97.5×45×15.5)</option><option value="short" data-i18n="fwShort">как в Short Томаса (79×27×16)</option><option value="own" data-i18n="fwOwn">свои размеры</option></select></div>
+    <div class="volrow"><span data-i18n="bxLen">Длина</span> <input id="fwLen" type="number" step="0.5"> <span data-i18n="bxWid">Ширина</span> <input id="fwWid" type="number" step="0.5"> <span data-i18n="bxDepth">Глубина</span> <input id="fwDep" type="number" step="0.5"></div>
+    <h4 data-i18n="fwPosT">Где стоят, мм</h4>
+    <table class="fwtab">
+      <tr><th></th><th data-i18n="fwX">X от хвоста</th><th data-i18n="fwR">до рейла</th><th data-i18n="fwC">схождение</th></tr>
+      <tr id="fwRowF"><td data-i18n="fwFront">Боковые</td><td><input id="fwFX" type="number" step="5"></td><td><input id="fwFR" type="number" step="1"></td><td><input id="fwFC" type="number" step="50"></td></tr>
+      <tr id="fwRowB"><td data-i18n="fwRear">Задние (квад)</td><td><input id="fwBX" type="number" step="5"></td><td><input id="fwBR" type="number" step="1"></td><td><input id="fwBC" type="number" step="50"></td></tr>
+      <tr id="fwRowM"><td data-i18n="fwCenter">Центральная</td><td><input id="fwMX" type="number" step="5"></td><td></td><td></td></tr>
+    </table>
+    <label class="chk"><input id="fwReplace" type="checkbox" checked> <span data-i18n="fwReplace">Заменить плавниковые пробки, что уже есть в доске</span></label>
+    <h4 data-i18n="fwLeashT">Лиш-пробка (на палубе, по оси)</h4>
+    <div class="volrow"><label class="chk"><input id="fwLeash" type="checkbox"> <span data-i18n="fwLeash">поставить</span></label>
+      <span data-i18n="fwX">X от хвоста</span> <input id="fwLX" type="number" step="5"> <span data-i18n="fwDia">диаметр</span> <input id="fwLD" type="number" step="0.5"> <span data-i18n="bxDepth">Глубина</span> <input id="fwLH" type="number" step="0.5"></div>
+    <div class="muted" id="fwMsg"></div>
+    <div class="dlgbtns"><button id="fwGo" class="primary" data-i18n="fwGo">Поставить</button><button id="fwClose" data-i18n="close">Закрыть</button></div>
+  </div>
+</div>
+
 <div id="dlgPrint" class="dlg" hidden>
   <div class="dlgbox">
     <h3 data-i18n="prTitle">Печать и PDF</h3>
@@ -254,6 +288,7 @@
 <script src="js/resize.js"></script>
 <script src="js/smart.js"></script>
 <script src="js/actions.js"></script>
+<script src="js/fins.js"></script>
 <script src="js/print.js"></script>
 <script src="js/hydro.js"></script>
 <script src="js/fin.js"></script>

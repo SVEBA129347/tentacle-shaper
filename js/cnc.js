@@ -22,6 +22,8 @@
   // ---------- настройки по умолчанию (из блока Machine файла, если есть) ----------
   TS.cncDefaults = function (board, model) {
     var M = board.B.getElementsByTagName('Machine')[0];
+    // фрезеровка пробок — из настроек станка в файле (DigPlugs, PlugsPositionOnly, запасы)
+    function plugTag(tag, def) { var e = board.B.getElementsByTagName(tag)[0], v = e ? parseFloat(e.textContent) : NaN; return isFinite(v) ? v : def; }
     var ob = board.B.getElementsByTagName('OffsetBlank')[0];
     var obx = ob ? num(ob, 'x') : NaN;
     var s = {
@@ -36,7 +38,8 @@
       roughLoops: 3, roughLoopStep: 18,
       bridges: or(num(M, 'NbPlotsMaintient'), 2) > 0, bridgeL: or(num(M, 'LargeurPlotsMaintient') * 10, 50),
       bridgeH: or(num(M, 'HauteurPlotsMaintient') * 10, 15),
-      endCut: or(num(M, 'CutStringerTailDeck'), 1) > 0, xMin: 4, plugs: true,
+      endCut: or(num(M, 'CutStringerTailDeck'), 1) > 0, xMin: 4, plugs: plugTag('DigPlugs', 1) > 0, plugMark: plugTag('PlugsPositionOnly', 0) > 0, plugMarkD: 2,
+      plugZ: plugTag('PlugsZMargin', 0) * 10, plugY: or(plugTag('PlugsYMargin', NaN), plugTag('PlugsYMargin2', 0)) * 10,
       startNose: false, mTail: 0, mNose: 0, endX: 0, endY: 0, endZ: 0
     };
     if (s.Yc <= 0) s.Yc = 600;
@@ -385,8 +388,8 @@
       p.pts = o;
     });
     // ---------- карманы пробок плавников (только дно, в конце программы) ----------
-    if (side === 'bot' && s.plugs) {
-      boxes(model.board).forEach(function (bx) {
+    if (s.plugs) {
+      boxes(model.board, side === 'bot' ? 1 : 0).forEach(function (bx) {
         // высота поверхности дна под точкой (по облаку точек, без фрезы)
         function surfZ(X, Y) {
           var c = cloud.cell, best = -Infinity, r = 3;
@@ -401,12 +404,20 @@
           // ось кармана: от заднего центра к переднему, с углом развала (toe)
           var half = Math.max(0, (bx.len - bx.wid) / 2), ca = Math.cos(pl.ang), sa = Math.sin(pl.ang);
           var e1 = fr.p(pl.x - half * ca, pl.y - half * sa, 0), e2 = fr.p(pl.x + half * ca, pl.y + half * sa, 0);
-          var rr = Math.max(0, bx.wid / 2 - cut.R);                  // радиус обхода контура
+          var rr = Math.max(0, bx.wid / 2 + (s.plugY || 0) - cut.R);                  // радиус обхода контура
           var ax = e2[0] - e1[0], ay = e2[1] - e1[1], al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
           var nx = -ay, ny = ax, pts = [];
-          function floorZ(X, Y) { return surfZ(X, Y) - bx.depth; }
+          function floorZ(X, Y) { return surfZ(X, Y) - bx.depth - (s.plugZ || 0); }
           var top = surfZ(e1[0], e1[1]);
           pts.push([e1[0], e1[1], top + 2]);
+          if (s.plugMark) {
+            // только наметить: засверловка в центре (и по концам у длинной пробки)
+            var mk = half > 0.5 ? [e1, fr.p(pl.x, pl.y, 0), e2] : [fr.p(pl.x, pl.y, 0)];
+            pts.length = 0;
+            mk.forEach(function (q) { var zq = surfZ(q[0], q[1]); pts.push([q[0], q[1], zq + 2], [q[0], q[1], zq - s.plugMarkD], [q[0], q[1], zq + 2]); });
+            passes.push({ kind: 'plug', pts: pts, noDirect: true });
+            return;
+          }
           for (var zz = top - s.roughStep; zz > floorZ(e1[0], e1[1]); zz -= s.roughStep) pts.push([e1[0], e1[1], zz]);
           pts.push([e1[0], e1[1], floorZ(e1[0], e1[1])]);
           pts.push([e2[0], e2[1], floorZ(e2[0], e2[1])]);
@@ -436,10 +447,11 @@
   };
 
   // ---------- вставки (пробки плавников) из файла: только те, что фрезеруются на дне ----------
-  function boxes(board) {
-    var out = [];
+  // face: 1 — дно, 0 — палуба (лиш-пробка)
+  function boxes(board, face) {
+    var out = [], fc = face === undefined ? 1 : face;
     (board.boxes || []).forEach(function (bx) {
-      if (!bx.cut || bx.face !== 1) return;
+      if (!bx.cut || (bx.face === 1 ? 1 : 0) !== fc) return;
       var x = bx.x * 10, y = bx.y * 10, ang = bx.ang || 0;
       var b = { name: bx.name, len: bx.len * 10, wid: bx.wid * 10, depth: bx.depth * 10, places: [] };
       if (bx.central || Math.abs(y) < 0.01) b.places.push({ x: x, y: 0, ang: 0 });

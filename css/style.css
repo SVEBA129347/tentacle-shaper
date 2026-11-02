@@ -281,3 +281,13 @@ body[data-tab="fin"] .empty, body[data-tab="fin"] .work, body[data-tab="foil"] .
 .foil-3d-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 12px 0; font-size: 13px; }
 .foil-3d-cap span { color: var(--muted); font-size: 12px; }
 #fo3d canvas { display: block; cursor: grab; }
+/* мастер «Плавники и пробки» */
+.fwtab { border-collapse: collapse; margin: 4px 0 8px; }
+.fwtab th { font-weight: 500; font-size: 12px; color: #666; text-align: left; padding: 2px 6px; }
+.fwtab td { padding: 2px 6px; }
+.fwtab input { width: 80px; }
+.boxform select { width: 100%; }
+#dlgFins .dlgbox { max-width: 640px; }
+#dlgFins .fwtab { width: auto; }
+#dlgFins .volrow label.chk { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+#dlgFins .volrow input[type=number] { width: 72px; }

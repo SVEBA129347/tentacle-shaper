@@ -343,24 +343,33 @@
   };
 
   // ---------- вставки (пробки) ----------
-  function boxData(o) { return { x: o.x, y: o.y, len: o.len, wid: o.wid, depth: o.depth, ang: o.ang, even: o.even, cut: o.cut, changed: o.changed }; }
+  var BOX_KEYS = ['x', 'y', 'z', 'len', 'wid', 'depth', 'ang', 'even', 'central', 'cut', 'face', 'style', 'name', 'dx', 'dy', 'refRear', 'fixTail', 'fixNose', 'fixCenter', 'fixRail', 'distRail', 'changed'];
+  function boxData(o) { var d = {}; BOX_KEYS.forEach(function (k) { d[k] = o[k]; }); return d; }
   E.prototype.boxSet = function (i, f) {
     var o = this.b.boxes[i]; if (!o) return;
-    Object.keys(f).forEach(function (k) { if (f[k] !== undefined && (typeof f[k] === 'boolean' || isFinite(f[k]))) o[k] = f[k]; });
+    Object.keys(f).forEach(function (k) { var v = f[k]; if (v !== undefined && (typeof v === 'boolean' || typeof v === 'string' || isFinite(v))) o[k] = v; });
+    if (o.style === 4) o.len = o.wid;
     if (o.len < o.wid) o.len = o.wid;
+    if (o.central) { o.y = 0; o.ang = 0; o.even = false; }
     o.x = Math.max(o.len / 2, Math.min(this.b.length - o.len / 2, o.x));
     o.changed = true; this.dirty = true; this.everEdited = true;
   };
-  E.prototype.addBox = function (x, y) {
-    var b = this.b, src = b.boxes && b.boxes[0], w;
+  // kind: 'fin' (плавниковая) или 'round' (круглая, лиш); образец — такая же пробка из файла
+  E.prototype.addBox = function (x, y, kind) {
+    var b = this.b, round = kind === 'round', src = null, w;
+    (b.boxes || []).forEach(function (o) { if (!src && (o.style === 4) === round) src = o; });
     if (src) w = src.wrap.cloneNode(true);
     else {
       var d = new DOMParser().parseFromString(BOX_TPL, 'application/xml');
       w = b.doc.importNode(d.documentElement, true);
     }
     var o = TS.readBox(w);
-    o.x = x; o.y = y; o.changed = true;
-    if (!src) { o.len = 9.75; o.wid = 4.5; o.depth = 1.55; o.ang = 0; o.even = true; o.cut = true; o.face = 1; }
+    if (!src) {
+      o.len = 9.75; o.wid = 4.5; o.depth = 1.55; o.ang = 0; o.even = true; o.central = false; o.cut = true; o.face = 1; o.style = 2;
+      o.dx = 1; o.dy = 0; o.refRear = true; o.fixTail = true; o.fixNose = false; o.fixCenter = false; o.fixRail = true;
+      if (round) { o.len = o.wid = 2.7; o.depth = 1.6; o.even = false; o.central = true; o.face = 0; o.style = 4; o.dx = 0; o.refRear = false; o.fixRail = false; o.fixCenter = true; o.name = 'Plug'; }
+    }
+    o.x = x; o.y = round ? 0 : y; o.changed = true;
     b.boxes = b.boxes || []; b.boxes.push(o);
     this.dirty = true; this.everEdited = true;
     return b.boxes.length - 1;
@@ -369,6 +378,42 @@
     if (!this.b.boxes || !this.b.boxes[i]) return false;
     this.b.boxes.splice(i, 1); this.dirty = true; this.everEdited = true; return true;
   };
+
+  // ---------- пробки при изменении размеров доски ----------
+  // запомнить положение относительно хвоста/носа/оси/рейла (до изменения)
+  TS.boxRecord = function (b) {
+    if (!b.boxes || !b.boxes.length) return null;
+    var m = new TS.Model(b);
+    return { L: b.length, list: b.boxes.map(function (o) {
+      var P = TS.boxPts(o), hw = m.halfW(P.pref[0]);
+      return { o: o, x: o.x, y: o.y, hw: hw, rail: hw - Math.abs(P.pref[1]) };
+    }) };
+  };
+  // поставить по правилам пробки: по длине — от хвоста, от носа или пропорционально (gx — как сдвинулась форма);
+  // по ширине — от рейла, от оси или пропорционально
+  TS.boxFollow = function (b, rec, gx) {
+    if (!rec) return;
+    var m = new TS.Model(b), L = b.length;
+    rec.list.forEach(function (r) {
+      var o = r.o, nx;
+      if (o.fixTail) nx = r.x;
+      else if (o.fixNose) nx = L - (rec.L - r.x);
+      else nx = gx ? gx(r.x) : r.x * L / rec.L;
+      o.x = Math.max(o.len / 2, Math.min(L - o.len / 2, nx));
+      if (!o.central && Math.abs(r.y) > 1e-6) {
+        var s = r.y < 0 ? -1 : 1, ay = Math.abs(r.y);
+        for (var it = 0; it < 3; it++) {
+          var P = TS.boxPts(o), hw = m.halfW(P.pref[0]), k = Math.abs(P.pref[1]) - Math.abs(o.y);
+          if (o.fixRail) ay = hw - r.rail - k;
+          else if (o.fixCenter) ay = Math.abs(r.y);
+          else ay = Math.abs(r.y) * hw / r.hw;
+          o.y = s * Math.max(0, ay);
+        }
+      }
+      if (Math.abs(o.x - r.x) > 1e-6 || Math.abs(o.y - r.y) > 1e-6) o.changed = true;
+    });
+  };
+
   // заготовка вставки в формате Shape3D (пробка 97.5 × 45 × 15.5 мм, пара)
   var BOX_TPL = '<Box_0><Box><Name>Fin</Name><Length>9.750</Length><Width>4.500</Width><Height>1.550</Height><Diameter>4.500</Diameter>' +
     '<C1C2>5.250</C1C2><Reflexion_coef>20</Reflexion_coef><Even>1</Even><Central>0</Central><SymNoseTail>0</SymNoseTail>' +

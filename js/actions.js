@@ -39,7 +39,7 @@
     function seg(x) { var i = 0; while (i < knots.length - 2 && x > knots[i + 1]) i++; return i; }
     function g(x) { var i = seg(x); return nk[i] + (x - knots[i]) * (nk[i + 1] - nk[i]) / (knots[i + 1] - knots[i]); }
     function gp(x) { var i = seg(x); return (nk[i + 1] - nk[i]) / (knots[i + 1] - knots[i]); }
-    var L = b.length, old = arcTable(b.strbot), sOld = old.ss[old.ss.length - 1];
+    var L = b.length, old = arcTable(b.strbot), sOld = old.ss[old.ss.length - 1], rec = TS.boxRecord(b);
 
     xCurves(b, ed).forEach(function (c) {
       for (var i = 0; i < c.P.length; i++) {
@@ -67,8 +67,8 @@
         c.P[i][0] = nS;
       }
     });
-    (b.boxes || []).forEach(function (o) { var nx = g(o.x); if (Math.abs(nx - o.x) > 1e-6) { o.x = nx; o.changed = true; } });
     finish(b, ed);
+    TS.boxFollow(b, rec, g);
   };
   // концы: хвост и нос удлиняются на dt / dn (см) за счёт зоны длиной zone от каждого конца
   TS.extendTips = function (b, ed, dt, dn, zone) {

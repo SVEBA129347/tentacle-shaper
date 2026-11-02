@@ -330,26 +330,42 @@
   }
   function drawBoxesTop(v) {
     (st.board.boxes || []).forEach(function (o, i) {
-      var sel = st.selBox === i;
+      var sel = st.selBox === i, deck = o.face !== 1, col = deck ? '#b8860b' : '#5f3dc4';
       boxPlaces(o).forEach(function (pl) {
-        v.poly(obround(o, pl), { fill: sel ? 'rgba(95,61,196,0.25)' : 'rgba(95,61,196,0.10)', stroke: '#5f3dc4', width: sel ? 2 : 1.2 }, true);
+        v.poly(obround(o, pl), { fill: sel ? 'rgba(95,61,196,0.25)' : 'rgba(95,61,196,0.10)', stroke: col, width: sel ? 2 : 1.2, dash: deck ? [4, 3] : null }, true);
       });
+      if (!sel) return;
+      // опорная точка, расстояние до рейла и линия схождения (как в Shape3D)
+      var P = TS.boxPts(o), c = TS.finGeo.conv(o), m = st.model;
+      if (o.central || Math.abs(o.y) < 1e-6) return;
+      [1, -1].forEach(function (sg) {
+        if (sg < 0 && !o.even) return;
+        var px = P.pref[0], py = sg * Math.abs(P.pref[1]), hw = sg * m.halfW(px);
+        v.dot(px * 10, py * 10, 3, '#5f3dc4');
+        v.poly([[px * 10, py * 10], [px * 10, hw * 10]], { stroke: '#e8590c', width: 1.2 });
+        if (isFinite(c) && c < 4 * st.board.length) v.poly([[px * 10, py * 10], [(px + c) * 10, 0]], { stroke: '#5f3dc4', width: 1, dash: [6, 4] });
+      });
+      v.label(P.pref[0] * 10, Math.abs(P.pref[1]) * 10, fmt(TS.finGeo.rail(o, m) * 10, 1), '#e8590c', 'left', -6);
     });
   }
   function drawBoxesSide(v) {
     if (st.sideMode === 'thick') return;
     (st.board.boxes || []).forEach(function (o, i) {
-      if (o.face !== 1) return;
-      var zb = st.model.bottomZ(o.x, o.y) * 10, x0 = (o.x - o.len / 2) * 10, x1 = (o.x + o.len / 2) * 10;
-      v.poly([[x0, zb], [x1, zb], [x1, zb + o.depth * 10], [x0, zb + o.depth * 10]], { fill: 'rgba(95,61,196,0.15)', stroke: '#5f3dc4', width: st.selBox === i ? 2 : 1 }, true);
+      var x0 = (o.x - o.len / 2) * 10, x1 = (o.x + o.len / 2) * 10, z0, z1;
+      if (o.face === 1) { z0 = st.model.bottomZ(o.x, o.y) * 10; z1 = z0 + o.depth * 10; }
+      else { z0 = st.model.zd(o.x) * 10; z1 = z0 - o.depth * 10; }
+      v.poly([[x0, z0], [x1, z0], [x1, z1], [x0, z1]], { fill: 'rgba(95,61,196,0.15)', stroke: o.face === 1 ? '#5f3dc4' : '#b8860b', width: st.selBox === i ? 2 : 1 }, true);
     });
   }
   function drawBoxesSlice(v) {
     (st.board.boxes || []).forEach(function (o) {
-      if (o.face !== 1 || Math.abs(st.secX - o.x) > o.len / 2) return;
+      if (Math.abs(st.secX - o.x) > o.len / 2) return;
+      if (o.face !== 1 && !(o.central || Math.abs(o.y) < 1e-6)) return;
       boxPlaces(o).forEach(function (pl) {
-        var y = pl.y, zb = st.model.bottomZ(st.secX, y) * 10, w = o.wid / 2;
-        v.poly([[(y - w) * 10, zb], [(y + w) * 10, zb], [(y + w) * 10, zb + o.depth * 10], [(y - w) * 10, zb + o.depth * 10]], { fill: 'rgba(95,61,196,0.15)', stroke: '#5f3dc4', width: 1 }, true);
+        var y = pl.y, w = o.wid / 2, z0, z1;
+        if (o.face === 1) { z0 = st.model.bottomZ(st.secX, y) * 10; z1 = z0 + o.depth * 10; }
+        else { z0 = st.model.zd(st.secX) * 10; z1 = z0 - o.depth * 10; }
+        v.poly([[(y - w) * 10, z0], [(y + w) * 10, z0], [(y + w) * 10, z1], [(y - w) * 10, z1]], { fill: 'rgba(95,61,196,0.15)', stroke: o.face === 1 ? '#5f3dc4' : '#b8860b', width: 1 }, true);
       });
     });
   }
@@ -375,22 +391,63 @@
     var o = bx[st.selBox];
     $('boxForm').hidden = !o;
     if (!o) return;
-    var ins = $('boxForm').querySelectorAll('input');
+    var G = TS.finGeo, cen = o.central || Math.abs(o.y) < 1e-6;
+    var nr = $('boxForm').querySelectorAll('.nr');
+    for (var q = 0; q < nr.length; q++) nr[q].hidden = cen;
+    var ins = $('boxForm').querySelectorAll('input,select');
     for (var i = 0; i < ins.length; i++) {
-      var k = ins[i].getAttribute('data-b');
-      if (ins[i] === document.activeElement) continue;
-      if (ins[i].type === 'checkbox') ins[i].checked = !!o[k];
-      else ins[i].value = k === 'ang' ? fmt(o.ang * 180 / Math.PI, 2) : fmt(o[k] * 10, 1);
+      var el = ins[i], k = el.getAttribute('data-b'), v;
+      if (el === document.activeElement) continue;
+      if (el.type === 'checkbox') { el.checked = !!o[k]; continue; }
+      if (k === 'name') v = o.name || '';
+      else if (k === 'face') v = String(o.face === 1 ? 1 : 0);
+      else if (k === 'fixL') v = o.fixTail ? 'tail' : o.fixNose ? 'nose' : 'prop';
+      else if (k === 'fixW') v = o.fixRail ? 'rail' : o.fixCenter ? 'center' : 'prop';
+      else if (k === 'xn') v = fmt((st.board.length - o.x) * 10, 1);
+      else if (k === 'y') v = fmt(Math.abs(o.y) * 10, 1);
+      else if (k === 'rail') v = fmt(G.rail(o, st.model) * 10, 1);
+      else if (k === 'ang') v = fmt(o.ang * 180 / Math.PI, 2);
+      else if (k === 'conv') { var c = G.conv(o); v = isFinite(c) ? fmt(c * 10, 0) : ''; }
+      else v = fmt(o[k] * 10, 1);
+      el.value = v;
     }
   }
   function boxFromForm(e) {
-    var o = st.board.boxes[st.selBox]; if (!o) return;
-    var k = e.target.getAttribute('data-b'), f = {};
-    if (e.target.type === 'checkbox') f[k] = e.target.checked;
-    else { var v = parseFloat(e.target.value.replace(',', '.')); if (!isFinite(v)) return; f[k] = k === 'ang' ? v * Math.PI / 180 : v / 10; }
-    st.ed.begin(); st.ed.boxSet(st.selBox, f); heavy();
+    var i = st.selBox, o = st.board.boxes[i]; if (!o) return;
+    var el = e.target, k = el.getAttribute('data-b'), f = {}, raw = String(el.value).replace(',', '.'), v = parseFloat(raw), G = TS.finGeo;
+    st.ed.begin();
+    if (el.type === 'checkbox') {
+      f[k] = el.checked;
+      if (k === 'central' && !el.checked && Math.abs(o.y) < 1e-6) { f.y = 10; f.even = true; }
+    }
+    else if (k === 'name') f.name = el.value.replace(/[^\x20-\x7e]/g, '_').trim() || o.name;
+    else if (k === 'face') f.face = +el.value;
+    else if (k === 'fixL') { f.fixTail = el.value === 'tail'; f.fixNose = el.value === 'nose'; }
+    else if (k === 'fixW') { f.fixRail = el.value === 'rail'; f.fixCenter = el.value === 'center'; }
+    else if (k === 'conv' || k === 'rail') {
+      // до рейла и схождение задаются независимо (как в Shape3D): второе держим
+      var r0 = G.rail(o, st.model), c0 = G.conv(o), q;
+      if (k === 'rail' && !isFinite(v)) { st.ed.undo.pop(); return; }
+      for (q = 0; q < 4; q++) {
+        if (k === 'rail') { G.setRail(o, st.model, v / 10); G.setConv(o, c0); }
+        else { G.setConv(o, raw.trim() === '' ? NaN : v / 10); G.setRail(o, st.model, r0); }
+      }
+    }
+    else if (k === 'x' || k === 'xn') {
+      if (!isFinite(v)) { st.ed.undo.pop(); return; }
+      var r1 = G.rail(o, st.model), c1 = G.conv(o), q1;
+      st.ed.boxSet(i, { x: k === 'x' ? v / 10 : st.board.length - v / 10 });
+      if (!o.central && Math.abs(o.y) > 1e-6) for (q1 = 0; q1 < 4; q1++) { if (o.fixRail) G.setRail(o, st.model, r1); G.setConv(o, c1); }
+    }
+    else {
+      if (!isFinite(v)) { st.ed.undo.pop(); return; }
+      if (k === 'xn') f.x = st.board.length - v / 10;
+      else if (k === 'y') f.y = (o.y < 0 ? -1 : 1) * v / 10;
+      else if (k === 'ang') f.ang = v * Math.PI / 180;
+      else f[k] = v / 10;
+    }
+    st.ed.boxSet(i, f); heavy();
   }
-
   // ---------- вид сверху ----------
   function drawTop(ctx, v) {
     var g = st.geo; v.grid(); if (!g) return;
@@ -917,6 +974,13 @@
     if (!st.board) return;
     st.ed.renormSlices(); st.ed.sync();
     st.model = new TS.Model(st.board);
+    // пробки: высота поверхности и расстояние до рейла (как пишет Shape3D)
+    (st.board.boxes || []).forEach(function (o) {
+      if (!o.changed) return;
+      o.distRail = TS.finGeo.rail(o, st.model);
+      var zz = o.face === 1 ? st.model.bottomZ(o.x, Math.abs(o.y)) : st.model.zd(o.x);
+      if (isFinite(zz)) o.z = zz;
+    });
     var ms = st.model.measures(), vol = st.model.volume();
     var bytes = TS.writeS3dx(st.board, st.ed.everEdited ? {
       Length: st.board.length, LengthDev: ms.lengthDev / 10, Width: ms.width / 10, Thickness: ms.thick / 10,
@@ -991,7 +1055,7 @@
     TS.views = { top: vTop, side: vSide, slice: vSlice };
     TS.cncUI.init();
     TS.smartUI.init();
-    TS.actionsUI.init();
+    TS.actionsUI.init(); TS.finsUI.init();
     TS.printUI.init();
     TS.hydroUI.init();
     TS.finUI.init();
@@ -1033,8 +1097,9 @@
       var i = e.target.getAttribute && e.target.getAttribute('data-i'); if (i === null) return;
       st.selBox = +i; st.ed.sel = null; showSel(); renderBoxes(); redraw2d();
     });
-    var bins = $('boxForm').querySelectorAll('input');
+    var bins = $('boxForm').querySelectorAll('input,select');
     for (var bq = 0; bq < bins.length; bq++) bins[bq].addEventListener('change', boxFromForm);
+    $('boxWiz').addEventListener('click', function () { TS.finsUI.open(); });
     $('boxAdd').addEventListener('click', function () {
       st.ed.begin(); st.selBox = st.ed.addBox(Math.min(st.model.L * 0.2, 30), 15); heavy();
     });

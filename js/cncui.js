@@ -32,7 +32,8 @@
       if (g[0] === 'cncOrder') h += '<label class="chk"><input data-k="startNose" type="checkbox"> <span data-i18n="cStartNose">' + TS.t('cStartNose') + '</span></label>';
       if (g[0] === 'cncRough') h += '<label class="chk"><input data-k="rough" type="checkbox"> <span data-i18n="cRough">' + TS.t('cRough') + '</span></label>' +
         '<label class="chk"><input data-k="bridges" type="checkbox"> <span data-i18n="cBridges">' + TS.t('cBridges') + '</span></label>' +
-        '<label class="chk"><input data-k="plugs" type="checkbox"> <span data-i18n="cPlugs">' + TS.t('cPlugs') + '</span></label>';
+        '<label class="chk"><input data-k="plugs" type="checkbox"> <span data-i18n="cPlugs">' + TS.t('cPlugs') + '</span></label>' +
+        '<label class="chk"><input data-k="plugMark" type="checkbox"> <span data-i18n="cPlugMark">' + TS.t('cPlugMark') + '</span></label>';
       h += '</div>';
     });
     $('cncForm').innerHTML = h;
@@ -146,7 +147,7 @@
       [TS.t('cGaps'), fmt(s.boardLo, 1) + ' / ' + fmt(s.Tb - s.boardHi, 1) + ' ' + mm],
       [TS.t('cncRough'), s.rough ? (TS.t('cRoughStep') + ' ' + s.roughStep + ' · ' + TS.t('cRoughMargin') + ' ' + s.roughMargin + ' · ' + TS.t('cRoughLoops') + ' ' + s.roughLoops) : '—'],
       [TS.t('cBridges'), s.bridges ? (s.bridgeL + ' × ' + s.bridgeH + ' ' + mm) : '—'],
-      [TS.t('cPlugs'), s.plugs ? (TS.cncBoxes(b).reduce(function (a, q) { return a + q.places.length; }, 0) + ' ' + TS.t('cPcs')) : '—'],
+      [TS.t('cPlugs'), s.plugs ? (TS.cncBoxes(b, 1).concat(TS.cncBoxes(b, 0)).reduce(function (a, q) { return a + q.places.length; }, 0) + ' ' + TS.t('cPcs')) : '—'],
       [TS.t('cncFeed'), s.feed + ' ' + TS.t('cFeedU') + ' · ' + TS.t('cSafeZ') + ' ' + s.safeZ + ' ' + mm],
       [TS.t('cncOrder'), (s.startNose ? TS.t('cStartNose') : TS.t('cStartTail')) + ' · ' + TS.t('cMTail') + ' ' + s.mTail + ' · ' + TS.t('cMNose') + ' ' + s.mNose + ' · ' + TS.t('cEndPos') + ' ' + s.endX + ', ' + s.endY + ', ' + s.endZ]
     ];
