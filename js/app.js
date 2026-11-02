@@ -173,12 +173,12 @@
 
   // ---------- пересчёт ----------
   function light() {
-    st.model = new TS.Model(st.board);
+    st.model = new TS.Model(st.board); st.rmMs = null;
     buildGeo(); redraw2d(); showSel(); markDirty();
   }
   function heavy() {
     st.ed.renormSlices(); st.ed.sync();
-    st.model = new TS.Model(st.board); st.ms = null; st.vol = null;
+    st.model = new TS.Model(st.board); st.ms = null; st.vol = null; st.rmMs = null;
     buildGeo(); redraw2d(); renderDims(); showSel(); markDirty();
     v3.setModel(st.model, true);
     TS.cncUI.onBoard(true);
@@ -222,6 +222,51 @@
     var s = st.ed && st.ed.sel; if (!s) return;
     var v = st.ed.value(s);
     st.ed.begin(); st.ed.move(s.key, s.i, s.kind, v[0] + du, v[1] + dv, false); heavy();
+  }
+
+  // ---------- таблички над видами (Rail Master): размеры и % изменения с открытия/сохранения ----------
+  var RM = [0, 50, 100, 200, 300, 500];
+  function pct(v, r) {
+    if (!isFinite(v) || !isFinite(r) || Math.abs(r) < 1e-6) return '';
+    var p = (v - r) / Math.abs(r) * 100, t = (Math.abs(p) < 0.5 ? '0' : (p > 0 ? '+' : '') + p.toFixed(0)) + '%';
+    return '<div class="pc' + (Math.abs(p) < 0.5 ? ' zero' : '') + '">' + t + '</div>';
+  }
+  // одна строка таблички: слева от хвоста, справа от носа (как в Shape3D)
+  function rmTable(items, ms, ref) {
+    var h = '<table><tr><td class="cap">' + TS.t('fromTail') + ', ' + TS.t('mm') + '</td>';
+    ms.tail.forEach(function (r) { h += '<th>' + r.d + '</th>'; });
+    h += '<td class="sep"></td>';
+    ms.nose.forEach(function (r) { h += '<th>' + r.d + '</th>'; });
+    h += '<td class="cap">' + TS.t('fromNose') + '</td></tr>';
+    items.forEach(function (it) {
+      h += '<tr><td class="cap">' + it[0] + '</td>';
+      ms.tail.forEach(function (r, i) { h += '<td>' + fmt(r[it[1]], 1) + (ref ? pct(r[it[1]], ref.tail[i][it[1]]) : '') + '</td>'; });
+      h += '<td class="sep"></td>';
+      ms.nose.forEach(function (r, i) { h += '<td>' + fmt(r[it[1]], 1) + (ref ? pct(r[it[1]], ref.nose[i][it[1]]) : '') + '</td>'; });
+      h += '<td></td></tr>';
+    });
+    return h + '</table>';
+  }
+  function renderRM() {
+    if (!st.model) return;
+    var m = st.model, ms = st.rmMs || (st.rmMs = m.measures(RM)), ref = st.refMs;
+    $('rmTop').innerHTML = rmTable([[TS.t('width'), 'width']], ms, ref);
+    $('rmSide').innerHTML = st.sideMode === 'thick' ? rmTable([[TS.t('thick'), 'thick']], ms, ref)
+      : rmTable([[TS.t('deckRocker'), 'deck'], [TS.t('rocker'), 'rocker']], ms, ref);
+    var sm = m.sliceMeasures(st.secX), sr = st.refModel ? st.refModel.sliceMeasures(Math.min(st.secX, st.refModel.L)) : null;
+    function cell(k, label, v, r) { return '<td><div class="cap">' + label + '</div>' + fmt(v, 1) + (sr ? pct(v, r) : '') + '</td>'; }
+    var h = '<table><tr><th colspan="7">' + TS.t('deckContour') + '</th></tr><tr>';
+    h += cell('W', TS.t('width'), sm.W, sr && sr.W);
+    h += cell('AD', TS.t('rmAD'), sm.AD, sr && sr.AD);
+    sm.deck.forEach(function (d, i) { h += cell('d', d.d, d.h, sr && sr.deck[i].h); });
+    h += cell('T', TS.t('rmT'), sm.T, sr && sr.T);
+    h += '</tr></table><table><tr><th colspan="3">' + TS.t('botContour') + '</th></tr><tr>';
+    h += cell('AB', TS.t('rmAB'), sm.AB, sr && sr.AB) + cell('V', TS.t('rmV'), sm.V, sr && sr.V) + cell('R', TS.t('rmRail'), sm.rail, sr && sr.rail);
+    $('rmSlice').innerHTML = h + '</tr></table>';
+  }
+  function setRef(buf) {
+    try { var rb = TS.parseS3dx(buf, ''); st.refModel = new TS.Model(rb); st.refMs = st.refModel.measures(RM); }
+    catch (e) { st.refModel = null; st.refMs = null; }
   }
 
   // ---------- панель размеров ----------
@@ -273,14 +318,14 @@
     vSlice.fitted = false;
     redraw2d();
   }
-  function redraw2d() { vTop.redraw(); vSide.redraw(); vSlice.redraw(); }
+  function redraw2d() { vTop.redraw(); vSide.redraw(); vSlice.redraw(); renderRM(); }
 
   function setSideMode(m) {
     st.sideMode = m;
     var bs = document.querySelectorAll('.sidemode:not(.cncside) button');
     for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-m') === m);
     if (st.ed && st.ed.sel && (st.ed.sel.key === 'bot' || st.ed.sel.key === 'deck' || st.ed.sel.key === 'thick')) { st.ed.sel = null; showSel(); }
-    sideBoundsMode(); vSide.fitted = false; if (st.model) vSide.redraw();
+    sideBoundsMode(); vSide.fitted = false; if (st.model) { vSide.redraw(); st.rmMs = st.rmMs; renderRM(); }
   }
   function sideBoundsMode() {
     var g = st.geo; if (!g) return;
@@ -291,7 +336,8 @@
   function loadBuffer(buf, name) {
     try {
       var b = TS.parseS3dx(buf, name);
-      st.board = b; st.model = new TS.Model(b); st.ms = null; st.vol = null; st.viewed3d = false;
+      st.board = b; st.model = new TS.Model(b); st.ms = null; st.vol = null; st.viewed3d = false; st.rmMs = null;
+      setRef(buf);
       st.ed = new TS.Editor(b, st.model.apexIdx);
       buildGeo();
       document.body.classList.add('loaded');
@@ -336,6 +382,7 @@
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     st.ed.dirty = false; markDirty(); renderDims();
+    setRef(bytes.buffer); renderRM();
     TS.lastSaved = bytes;   // для проверок
   }
 

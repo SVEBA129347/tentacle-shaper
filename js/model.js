@@ -144,7 +144,7 @@
   };
 
   // ---------- размеры (как Master Scale в Shape3D), мм ----------
-  Model.prototype.measures = function () {
+  Model.prototype.measures = function (stations) {
     var b = this.board, self = this;
     var sb = b.strbot.sample(2000);
     var arc = [0];
@@ -175,9 +175,9 @@
       return best;
     }
     function row(x) {
-      return { width: 20 * self.halfW(x), thick: 10 * perpThick(x), rocker: 10 * (self.zb(x) - minZ) };
+      return { x: x, width: 20 * self.halfW(x), thick: 10 * perpThick(x), rocker: 10 * (self.zb(x) - minZ), deck: 10 * (self.zd(x) - minZ) };
     }
-    var stations = [0, 50, 100, 200, 305, 500];
+    stations = stations || [0, 50, 100, 200, 305, 500];
     var tail = stations.map(function (d) { return Object.assign({ d: d }, row(xAtArc(Math.min(d / 10, S)))); });
     var nose = stations.slice().reverse().map(function (d) {
       return Object.assign({ d: d }, row(xAtArc(Math.max(S - d / 10, 0))));
@@ -196,7 +196,32 @@
       thick: maxT * 10, thickAt: arcAtX(maxTx),
       zeroAt: arcAtX(zeroX),
       tailRocker: 10 * (this.zb(0) - minZ), noseRocker: 10 * (this.zb(this.L) - minZ),
-      tail: tail, nose: nose
+      tail: tail, nose: nose, minZ: minZ, xAtArc: function (mm) { return xAtArc(mm / 10); }, arcAtX: arcAtX, perpThick: function (x) { return 10 * perpThick(x); }
+    };
+  };
+
+  // размеры сечения в x (мм): ширина, толщина по оси, высоты дека у рейла, апекс, V, точка рейла
+  Model.prototype.sliceMeasures = function (x, dists) {
+    dists = dists || [10, 20, 50, 100];
+    var c = this.sectionCtrl(x), a = this.apexIdx, n = this.nPts, sec = this.section(x, 60);
+    var zmin = Infinity; sec.forEach(function (p) { zmin = Math.min(zmin, p[1]); });
+    var yA = c.P[a][0], zA = c.P[a][1];
+    // деко-часть: от апекса к центру дека; высота над нижней точкой сечения на расстоянии d от апекса
+    var per = (n - 1 - a) * 59 + 1, deckPart = sec.slice(sec.length - per);   // точки от апекса до центра дека
+    function deckAt(d) {
+      var y = yA - d / 10;
+      for (var i = 1; i < deckPart.length; i++) {
+        var p = deckPart[i - 1], q = deckPart[i];
+        if ((p[0] - y) * (q[0] - y) <= 0 && p[0] !== q[0]) { var t = (y - p[0]) / (q[0] - p[0]); return 10 * (p[1] + (q[1] - p[1]) * t - zmin); }
+      }
+      return NaN;
+    }
+    var rp = a > 0 ? c.P[a - 1] : c.P[0];
+    return {
+      W: 20 * yA, T: 10 * (c.P[n - 1][1] - c.P[0][1]),
+      deck: dists.map(function (d) { return { d: d, h: deckAt(d) }; }),
+      AB: 10 * (zA - zmin), AD: 10 * (c.P[n - 1][1] - zA),
+      V: 10 * (rp[1] - c.P[0][1]), rail: 10 * rp[0]
     };
   };
 

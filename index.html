@@ -36,11 +36,11 @@
 
   <section class="work">
     <div class="views design-only">
-      <div class="pane top"><div class="ptitle" data-i18n="top">Вид сверху</div><canvas id="cTop"></canvas></div>
-      <div class="pane slice"><div class="ptitle" data-i18n="slice">Сечение</div><canvas id="cSlice"></canvas></div>
+      <div class="pane top"><div class="ptitle" data-i18n="top">Вид сверху</div><div class="rm" id="rmTop"></div><canvas id="cTop"></canvas></div>
+      <div class="pane slice"><div class="ptitle" data-i18n="slice">Сечение</div><div class="rm rm-slice" id="rmSlice"></div><canvas id="cSlice"></canvas></div>
       <div class="pane side"><div class="ptitle" data-i18n="side">Вид сбоку</div>
         <div class="sidemode"><button data-m="rocker" class="on" data-i18n="rockerMode">Рокер</button><button id="thickBtn" data-m="thick" data-i18n="thickMode">Толщина</button></div>
-        <canvas id="cSide"></canvas></div>
+        <div class="rm" id="rmSide"></div><canvas id="cSide"></canvas></div>
     </div>
     <div class="view3d only-3d">
       <div id="v3d"></div>
