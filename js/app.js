@@ -912,7 +912,7 @@
     st.model = new TS.Model(st.board);
     var ms = st.model.measures(), vol = st.model.volume();
     var bytes = TS.writeS3dx(st.board, st.ed.everEdited ? {
-      LengthDev: ms.lengthDev / 10, Width: ms.width / 10, Thickness: ms.thick / 10,
+      Length: st.board.length, LengthDev: ms.lengthDev / 10, Width: ms.width / 10, Thickness: ms.thick / 10,
       Tail_rocker: ms.tailRocker / 10, Nose_rocker: ms.noseRocker / 10, Volume: vol * 10
     } : {});
     var blob = new Blob([bytes], { type: 'application/octet-stream' });
@@ -968,6 +968,7 @@
     TS.views = { top: vTop, side: vSide, slice: vSlice };
     TS.cncUI.init();
     TS.smartUI.init();
+    TS.actionsUI.init();
     var tb = document.querySelectorAll('.ptypes [data-t]');
     for (var q2 = 0; q2 < tb.length; q2++) tb[q2].addEventListener('click', function (e) { setPtType(e.currentTarget.getAttribute('data-t')); });
     $('delPt').addEventListener('click', delSelected);

@@ -81,7 +81,8 @@
   // ---------- верх стрингера = низ + толщина ----------
   // Верх меняется на ту же величину, что низ (плюс правка толщины): deck = deck0 + Δ(x).
   // Без правок верх остаётся точно как в файле; ошибка приближения растёт только с размером правки.
-  E.prototype.regenDeck = function () {
+  // refine: при большой правке (выпрямить низ и т.п.) добавлять точки в верх, пока ошибка > 0.2 мм
+  E.prototype.regenDeck = function (refine) {
     var b = this.b, self = this, L = b.length;
     var zb = b.strbot.byX(2);
     var sb = b.strbot.sample(600), arc = [0];
@@ -94,18 +95,7 @@
       if (diffNow) { var s = TS.interp1(x, xs, arc) / S * Sd; d += diffNow(s) - self.diff0(s); }
       return d;
     }
-    var d0 = this.deck0, d = b.strdeck, n = d.P.length, e = 0.02;
-    function slope(x) { var a = Math.max(0, x - e), c = Math.min(L, x + e); return (delta(c) - delta(a)) / (c - a); }
-    for (var k = 0; k < n; k++) {
-      var x = d0.P[k][0], dz = delta(x), m = slope(x);
-      d.P[k][0] = x; d.P[k][2] = d0.P[k][2] + dz;
-      d.T1[k][0] = d0.T1[k][0]; d.T1[k][2] = d0.T1[k][2] + dz + m * (d0.T1[k][0] - x);
-      d.T2[k][0] = d0.T2[k][0]; d.T2[k][2] = d0.T2[k][2] + dz + m * (d0.T2[k][0] - x);
-    }
-    // точность приближения (мм) — для проверки
-    var zd0 = this.zd0, zz = d.byX(2), err = 0;
-    for (var q = 0; q <= 300; q++) { var xq = L * q / 300; err = Math.max(err, Math.abs(zz(xq) - (zd0(xq) + delta(xq)))); }
-    this.deckFitErr = err * 10;
+    this.deckFitErr = TS.shiftFit(this.deck0, b.strdeck, delta, L, refine ? 0.02 : 0) * 10;
   };
 
   // сечения подгоняются под контур и стрингер (форма сечения сохраняется)
@@ -449,6 +439,35 @@
     }
     this.sync(); this.dirty = true; this.everEdited = true;
     return 'ok';
+  };
+
+  // target = base + dz(x) по высоте: точки сдвигаются на dz, касательные — с учётом наклона dz.
+  // tol > 0 — если ошибка больше tol (см), в base добавляются точки (форма base не меняется),
+  // пока ошибка не станет меньше (не больше 16 точек). Возвращает ошибку, см.
+  TS.shiftFit = function (base, target, dz, L, tol) {
+    var e = 0.02, err = 0, worst = 0;
+    function slope(x) { var a = Math.max(0, x - e), c = Math.min(L, x + e); return (dz(c) - dz(a)) / (c - a); }
+    var zBase = null;
+    for (var it = 0; it < 14; it++) {
+      if (target.P.length !== base.P.length) TS.copyCurveInto(base, target);
+      var n = base.P.length;
+      for (var k = 0; k < n; k++) {
+        var x = base.P[k][0], d = dz(x), m = slope(x);
+        target.P[k][0] = x; target.P[k][2] = base.P[k][2] + d;
+        target.T1[k][0] = base.T1[k][0]; target.T1[k][2] = base.T1[k][2] + d + m * (base.T1[k][0] - x);
+        target.T2[k][0] = base.T2[k][0]; target.T2[k][2] = base.T2[k][2] + d + m * (base.T2[k][0] - x);
+      }
+      zBase = new TS.Curve(base.P, base.T1, base.T2).byX(2);
+      var zz = target.byX(2); err = 0; worst = -1;
+      for (var q = 0; q <= 400; q++) {
+        var xq = L * q / 400, eq = Math.abs(zz(xq) - (zBase(xq) + dz(xq)));
+        if (eq > err) { err = eq; worst = xq; }
+      }
+      if (!(tol > 0) || err <= tol || n >= 16) break;
+      var seg = 0; while (seg < n - 2 && base.P[seg + 1][0] < worst) seg++;
+      splitArr(base, seg, 0.5);
+    }
+    return err;
   };
 
   TS.Editor = E;

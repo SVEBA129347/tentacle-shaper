@@ -184,3 +184,5 @@ body.loaded .status .hint { display: none; }
 .steprow { margin-top: 6px; }
 .steprow input { width: 70px; }
 .seln { margin-left: auto; font-size: 11px; color: var(--sel, #c2255c); font-weight: 600; }
+.dlgbox h4 { margin: 14px 0 6px; font-size: 13px; }
+[hidden] { display: none !important; }

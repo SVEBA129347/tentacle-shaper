@@ -17,6 +17,7 @@
   <button id="redoBtn" class="needs-board icon" data-i18n-title="redo">↷</button>
   <button id="sizeBtn" class="needs-board" data-i18n="sizeBtn">Размеры…</button>
   <button id="smartBtn" class="needs-board" data-i18n="smartBtn">Задать в точке…</button>
+  <button id="actBtn" class="needs-board" data-i18n="actBtn">Действия…</button>
   <button id="curvBtn" class="needs-board toggle" data-i18n="curvBtn" data-i18n-title="curvTip">Кривизна</button>
   <button id="ghostBtn" class="needs-board toggle" data-i18n="ghostBtn" data-i18n-title="ghostTip">Сравнить…</button>
   <input id="ghostFile" type="file" accept=".s3dx" hidden>
@@ -158,6 +159,26 @@
   </div>
 </div>
 
+<div id="dlgAct" class="dlg" hidden>
+  <div class="dlgbox">
+    <h3 data-i18n="actTitle">Действия с доской</h3>
+    <div class="muted" id="acNow"></div>
+    <h4 data-i18n="acExtT">Удлинить / укоротить (остальная форма не меняется)</h4>
+    <div class="volrow"><select id="acMode"><option value="tips" data-i18n="acTipsO">концы</option><option value="sec" data-i18n="acSecO">участок</option></select></div>
+    <div class="volrow" id="acTips"><span data-i18n="acDt">хвост</span> <input id="acDt" type="number" step="5" value="0"> <span data-i18n="acDn">нос</span> <input id="acDn" type="number" step="5" value="0"> <span data-i18n="mm">мм</span>
+      <span data-i18n="acZone">зона у конца</span> <input id="acZone" type="number" step="10" value="300"> <span data-i18n="mm">мм</span></div>
+    <div class="volrow" id="acSec" hidden><span data-i18n="acFrom">от</span> <input id="acX1" type="number" step="10" value="400"> <span data-i18n="acTo">до</span> <input id="acX2" type="number" step="10" value="900"> <span data-i18n="mm">мм</span> <span data-i18n="fromTail">от хвоста</span>,
+      <span data-i18n="acBy">изменить на</span> <input id="acD" type="number" step="5" value="20"> <span data-i18n="mm">мм</span></div>
+    <div class="dlgbtns"><button id="acExt" class="primary" data-i18n="apply">Применить</button></div>
+    <h4 data-i18n="acRockT">Рокер</h4>
+    <div class="volrow"><span data-i18n="acAngL">Наклонить на</span> <input id="acAng" type="number" step="0.1" value="0.5"> ° <span class="muted" data-i18n="acAngH">(+ — нос вверх)</span> <button id="acRock" data-i18n="apply">Применить</button></div>
+    <div class="slbtns"><button id="acLevel" data-i18n="acLevel" data-i18n-title="acLevelT">Выровнять концы</button><button id="acNat" data-i18n="acNat" data-i18n-title="acNatT">Как лежит на полу</button>
+      <button id="acFlatB" data-i18n="acFlatB" data-i18n-title="acFlatBT">Выпрямить низ</button><button id="acFlatD" data-i18n="acFlatD" data-i18n-title="acFlatDT">Выпрямить верх</button></div>
+    <div class="muted" id="acMsg"></div>
+    <div class="dlgbtns"><button id="acUndo" data-i18n="acUndo">Отменить последнее</button><button id="acClose" data-i18n="close">Закрыть</button></div>
+  </div>
+</div>
+
 <footer class="status">
   <span id="coords"></span>
   <span class="hint design-only" data-i18n="hint2d"></span>
@@ -176,6 +197,7 @@
 <script src="js/edit.js"></script>
 <script src="js/resize.js"></script>
 <script src="js/smart.js"></script>
+<script src="js/actions.js"></script>
 <script src="js/cnc.js"></script>
 <script src="js/cncui.js"></script>
 <script src="js/app.js"></script>
