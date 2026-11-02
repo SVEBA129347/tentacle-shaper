@@ -620,7 +620,7 @@
   function markDirty() {
     var d = st.ed && st.ed.dirty;
     document.body.classList.toggle('dirty', !!d);
-    document.title = (d ? '• ' : '') + st.board.fileName.replace(/\.s3dx$/i, '') + ' — Tentacle Shaper';
+    document.title = (d ? '• ' : '') + st.board.fileName.replace(/\.s3dx$/i, '') + ' — Tentacle Surf';
   }
 
   // ---------- выбранная точка: поля для точного ввода ----------
@@ -937,6 +937,17 @@
 
   function init() {
     TS.applyI18n();
+    // выпадающие меню шапки: щелчок открывает, щелчок мимо или по пункту — закрывает
+    var menus = document.querySelectorAll('.topbar .menu');
+    function closeMenus(except) { for (var mi = 0; mi < menus.length; mi++) if (menus[mi] !== except) menus[mi].classList.remove('open'); }
+    for (var mi = 0; mi < menus.length; mi++) {
+      menus[mi].querySelector('.mbtn').addEventListener('click', function (e) {
+        var m = e.currentTarget.parentNode; closeMenus(m); m.classList.toggle('open'); e.stopPropagation();
+      });
+      menus[mi].querySelector('.mlist').addEventListener('click', function (e) { if (e.target.closest('button')) closeMenus(); });
+    }
+    document.addEventListener('mousedown', function (e) { if (!e.target.closest || !e.target.closest('.topbar .menu')) closeMenus(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenus(); });
     var status = function (x, y) { $('coords').textContent = 'X ' + fmt(x) + '  ' + (this || 'Y') + ' ' + fmt(y); };
     vTop = new TS.View2D($('cTop'), {
       bounds: function () { var g = st.geo; return g && [0, -g.maxY, g.L, g.maxY]; },
