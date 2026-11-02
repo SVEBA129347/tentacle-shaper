@@ -274,7 +274,7 @@
 
   function setSideMode(m) {
     st.sideMode = m;
-    var bs = document.querySelectorAll('.sidemode button');
+    var bs = document.querySelectorAll('.sidemode:not(.cncside) button');
     for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-m') === m);
     if (st.ed && st.ed.sel && (st.ed.sel.key === 'bot' || st.ed.sel.key === 'thick')) { st.ed.sel = null; showSel(); }
     sideBoundsMode(); vSide.fitted = false; if (st.model) vSide.redraw();
@@ -387,7 +387,7 @@
     $('sliceList').addEventListener('click', function (e) {
       var x = e.target.getAttribute && e.target.getAttribute('data-x'); if (x !== null) setSecX(parseFloat(x));
     });
-    var sm = document.querySelectorAll('.sidemode button');
+    var sm = document.querySelectorAll('.sidemode:not(.cncside) button');
     for (var q = 0; q < sm.length; q++) sm[q].addEventListener('click', function (e) { setSideMode(e.currentTarget.getAttribute('data-m')); });
     ['selU', 'selV'].forEach(function (id) {
       $(id).addEventListener('change', applyInputs);

@@ -31,7 +31,12 @@
       varMaxBot: or(num(M, 'VarMaxBot'), -1),
       nPts: 50, feed: 6000, feedHead: 12000,
       X0: or(obx * 10, 38.04), Yc: or(-num(M, 'PointOY') * 10, 600),
-      Tb: 80, tilt: 0, zMode: 'center', Z0: 0, stringer: true, safeZ: 15
+      Tb: 80, tilt: 0, zMode: 'center', Z0: 0, stringer: true, safeZ: 15,
+      rough: true, roughStep: or(num(M, 'DzOutlineRoughing') * 10, 30), roughMargin: or(num(M, 'Marge_detourage') * 10, 10),
+      roughLoops: 3, roughLoopStep: 18,
+      bridges: or(num(M, 'NbPlotsMaintient'), 2) > 0, bridgeL: or(num(M, 'LargeurPlotsMaintient') * 10, 50),
+      bridgeH: or(num(M, 'HauteurPlotsMaintient') * 10, 15),
+      endCut: or(num(M, 'CutStringerTailDeck'), 1) > 0, xMin: 4, plugs: true
     };
     if (s.Yc <= 0) s.Yc = 600;
     // наклон по умолчанию: концы дека на одной высоте (как ставит Shape3D, ±0.03°)
@@ -262,9 +267,95 @@
       if (passes.length % 2 === 1) sp.reverse();
       passes.push({ kind: 'stringer', pts: sp });
     }
+    // ---------- подрезка торца стрингера у хвоста (только дек) ----------
+    if (side === 'deck' && s.endCut) {
+      var xe = s.X0 - cut.R + 0.4, zt = fr.p(0, 0, model.zd(0) * 10)[2], zbt = fr.p(0, 0, model.zb(0) * 10)[2] - 5;
+      var yw = s.D / 4;
+      passes.push({ kind: 'endcut', pts: [[xe, s.Yc + yw, zt], [xe, s.Yc + yw, zbt], [xe, s.Yc - yw, zbt], [xe, s.Yc - yw, zt]] });
+    }
+
+    // ---------- черновая по контуру: слои вокруг доски, мосты у носа и хвоста ----------
+    var zMin = function () { return -Infinity; }, stepped = function (p) { return p; };
+    if (s.rough || s.bridges) {
+      var rough = [];
+      // высота апекса (низ черновой): по средней части доски
+      var zApex = Infinity;
+      for (var ia = 0; ia <= 40; ia++) {
+        var xa = L * (0.1 + 0.8 * ia / 40), ca = model.sectionCtrl(xa).P[a];
+        zApex = Math.min(zApex, fr.p(xa * 10, ca[0] * 10, ca[1] * 10)[2]);
+      }
+      var Xb = Math.max(s.xMin, s.X0 - cut.R - s.roughMargin - 10);
+      var Xf = fr.p(L * 10, 0, model.zd(L) * 10)[0] + cut.R + s.roughMargin + 10;
+      var xsR = [];
+      for (var xr = Xf; xr > Xb; xr -= 5) xsR.push(xr);
+      xsR.push(Xb);
+      // мосты: горизонтальные перемычки толщиной bridgeH и длиной bridgeL от торца хвоста и от носа,
+      // посередине толщины доски на конце. Черновая в этих зонах не опускается в перемычку.
+      var frD = new Frame(s, 'deck');
+      // перемычка: посередине толщины конца доски, но не толще самого конца (у тонкого носа)
+      function plate(x) {
+        var c = frD.p(x * 10, 0, model.zb(x) * 10), d = frD.p(x * 10, 0, model.zd(x) * 10), mid = (c[2] + d[2]) / 2;
+        return { X: (c[0] + d[0]) / 2, lo: Math.max(c[2], mid - s.bridgeH / 2), hi: Math.min(d[2], mid + s.bridgeH / 2) };
+      }
+      var pT = plate(0), pN = plate(L);
+      var zones = s.bridges ? [[pT.X - s.bridgeL, pT.X, pT], [pN.X, pN.X + s.bridgeL, pN]] : [];
+      // ниже какой высоты фреза не может опускаться в X (координаты этой стороны): фреза не задевает перемычку
+      zMin = function (X) {
+        for (var q = 0; q < zones.length; q++) {
+          var zz = zones[q];
+          if (X > zz[0] - cut.R && X < zz[1] + cut.R) return side === 'deck' ? zz[2].hi : s.Tb - zz[2].lo;
+        }
+        return -Infinity;
+      };
+      // наименьшее расстояние от оси, на котором фреза на высоте Z не касается доски (с запасом)
+      function clearW(X, Z, sg) {
+        var lo = 0, hi = 450;
+        Z -= s.roughMargin;                        // запас по высоте тот же, что и сбоку
+        if (cloud.drop(X, s.Yc + sg * lo, cut) <= Z) return 0;
+        for (var it = 0; it < 30; it++) {
+          var m = (lo + hi) / 2;
+          if (cloud.drop(X, s.Yc + sg * m, cut) <= Z && cloud.drop(X, s.Yc + sg * (m + 2), cut) <= Z) hi = m; else lo = m;
+        }
+        return hi;
+      }
+      // путь со ступеньками: вверх — до перехода, вниз — после
+      stepped = function (pts) {
+        var o = [pts[0]];
+        for (var i = 1; i < pts.length; i++) {
+          var c = o[o.length - 1], n = pts[i];
+          if (n[2] > c[2] + 0.01) o.push([c[0], c[1], n[2]]);
+          else if (n[2] < c[2] - 0.01) o.push([n[0], n[1], c[2]]);
+          o.push(n);
+        }
+        return o;
+      };
+      var levels = [];
+      for (var zl = s.Tb - s.roughStep; zl > zApex + 0.5; zl -= s.roughStep) levels.push(zl);
+      levels.push(zApex);
+      levels.forEach(function (Z) {
+        var wP = xsR.map(function (X) { return clearW(X, Z, 1); });
+        var wN = xsR.map(function (X) { return clearW(X, Z, -1); });
+        for (var k = s.roughLoops - 1; k >= 0; k--) {
+          var off = s.roughMargin + k * s.roughLoopStep;
+          // петля вокруг доски: +Y от носа к хвосту, поперёк за хвостом, −Y к носу, поперёк перед носом
+          var pP = xsR.map(function (X, i) { return [X, s.Yc + wP[i] + off, Math.max(Z, zMin(X))]; });
+          var pN = xsR.slice().reverse().map(function (X, i) { var j = xsR.length - 1 - i; return [X, s.Yc - wN[j] - off, Math.max(Z, zMin(X))]; });
+          rough.push({ kind: 'rough', pts: stepped(pP.concat(pN, [pP[0]])) });
+        }
+      });
+      rough.forEach(function (p) { p.noDirect = true; });
+      // чистовые и стрингер тоже не режут перемычки (торец стрингера — режет, он узкий)
+      passes.forEach(function (p) {
+        if (p.kind === 'endcut') return;
+        p.pts = stepped(p.pts.map(function (q) { var z = zMin(q[0]); return z > q[2] ? [q[0], q[1], z] : q; }));
+      });
+      if (s.rough) passes = rough.concat(passes);
+    }
+
     // последняя страховка: где отрезок всё же задевает поверхность (углы хвоста и носа),
     // дробим его через 0.5 мм и поднимаем фрезу по «опусканию»
     passes.forEach(function (p) {
+      if (p.kind === 'plug') return;               // карман пробки режется ниже поверхности намеренно
       var o = [p.pts[0]];
       for (var i = 1; i < p.pts.length; i++) {
         var A = p.pts[i - 1], B = p.pts[i];
@@ -285,13 +376,79 @@
       }
       p.pts = o;
     });
+    // ---------- карманы пробок плавников (только дно, в конце программы) ----------
+    if (side === 'bot' && s.plugs) {
+      boxes(model.board).forEach(function (bx) {
+        // высота поверхности дна под точкой (по облаку точек, без фрезы)
+        function surfZ(X, Y) {
+          var c = cloud.cell, best = -Infinity, r = 3;
+          for (var i = Math.floor((X - r) / c); i <= Math.floor((X + r) / c); i++)
+            for (var j = Math.floor((Y - r) / c); j <= Math.floor((Y + r) / c); j++) {
+              var aa = cloud.map[i + ',' + j]; if (!aa) continue;
+              for (var k = 0; k < aa.length; k++) if (Math.hypot(aa[k][0] - X, aa[k][1] - Y) <= r) best = Math.max(best, aa[k][2]);
+            }
+          return best;
+        }
+        bx.places.forEach(function (pl) {
+          // ось кармана: от заднего центра к переднему, с углом развала (toe)
+          var half = Math.max(0, (bx.len - bx.wid) / 2), ca = Math.cos(pl.ang), sa = Math.sin(pl.ang);
+          var e1 = fr.p(pl.x - half * ca, pl.y - half * sa, 0), e2 = fr.p(pl.x + half * ca, pl.y + half * sa, 0);
+          var rr = Math.max(0, bx.wid / 2 - cut.R);                  // радиус обхода контура
+          var ax = e2[0] - e1[0], ay = e2[1] - e1[1], al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
+          var nx = -ay, ny = ax, pts = [];
+          function floorZ(X, Y) { return surfZ(X, Y) - bx.depth; }
+          var top = surfZ(e1[0], e1[1]);
+          pts.push([e1[0], e1[1], top + 2]);
+          for (var zz = top - s.roughStep; zz > floorZ(e1[0], e1[1]); zz -= s.roughStep) pts.push([e1[0], e1[1], zz]);
+          pts.push([e1[0], e1[1], floorZ(e1[0], e1[1])]);
+          pts.push([e2[0], e2[1], floorZ(e2[0], e2[1])]);
+          if (rr > 0.3) {
+            // обход: полукруг вокруг переднего центра, прямая, полукруг вокруг заднего, прямая
+            var ang0 = Math.atan2(ny, nx), q, N = 24;
+            var loop = [];
+            for (q = 0; q <= N; q++) { var t = ang0 - Math.PI * q / N; loop.push([e2[0] + rr * Math.cos(t), e2[1] + rr * Math.sin(t)]); }
+            for (q = 0; q <= N; q++) { var t2 = ang0 + Math.PI - Math.PI * q / N; loop.push([e1[0] + rr * Math.cos(t2), e1[1] + rr * Math.sin(t2)]); }
+            loop.push(loop[0]);
+            pts.push([loop[0][0], loop[0][1], floorZ(loop[0][0], loop[0][1])]);
+            loop.forEach(function (l) { pts.push([l[0], l[1], floorZ(l[0], l[1])]); });
+          }
+          var last = pts[pts.length - 1];
+          pts.push([last[0], last[1], top + 2]);
+          passes.push({ kind: 'plug', pts: pts, noDirect: true });
+        });
+      });
+    }
+
     // переходы между проходами: прямо, если не врезаемся, иначе через подъём
     for (var j = 1; j < passes.length; j++) {
       var e = passes[j - 1].pts, b0 = passes[j].pts[0], a0 = e[e.length - 1];
-      passes[j].direct = Math.hypot(b0[0] - a0[0], b0[1] - a0[1]) <= s.D * 2 && chordOk(a0, b0) && cloud.drop((a0[0] + b0[0]) / 2, (a0[1] + b0[1]) / 2, cut) <= (a0[2] + b0[2]) / 2 + TOL;
+      passes[j].direct = !passes[j].noDirect && Math.hypot(b0[0] - a0[0], b0[1] - a0[1]) <= s.D * 2 && chordOk(a0, b0) && cloud.drop((a0[0] + b0[0]) / 2, (a0[1] + b0[1]) / 2, cut) <= (a0[2] + b0[2]) / 2 + TOL;
     }
     return { passes: passes, gouge: gouge, side: side };
   };
+
+  // ---------- вставки (пробки плавников) из файла: только те, что фрезеруются на дне ----------
+  function boxes(board) {
+    var out = [], B = board.B;
+    for (var i = 0; i < 64; i++) {
+      var n = B.getElementsByTagName('Box_' + i)[0]; if (!n) continue;
+      var bx = n.getElementsByTagName('Box')[0] || n;
+      if (num(bx, 'CutCNC') !== 1 || num(bx, 'Face') !== 1) continue;
+      var pc = bx.getElementsByTagName('PointCenter')[0];
+      var x = num(pc, 'x') * 10, y = num(pc, 'y') * 10, ang = or(num(bx, 'AngleOz'), 0);
+      var b = { name: (bx.getElementsByTagName('Name')[0] || {}).textContent || '', len: num(bx, 'Length') * 10,
+                wid: num(bx, 'Width') * 10, depth: num(bx, 'Height') * 10, places: [] };
+      if (num(bx, 'Central') === 1 || Math.abs(y) < 0.01) b.places.push({ x: x, y: 0, ang: 0 });
+      else {
+        // развал: передний конец ближе к оси
+        b.places.push({ x: x, y: Math.abs(y), ang: -Math.abs(ang) });
+        if (num(bx, 'Even') === 1) b.places.push({ x: x, y: -Math.abs(y), ang: Math.abs(ang) });
+      }
+      if (isFinite(b.len) && isFinite(b.wid) && isFinite(b.depth)) out.push(b);
+    }
+    return out;
+  }
+  TS.cncBoxes = boxes;
 
   // ---------- G-code (формат постпроцессора AKU/APS из настроек Ильи) ----------
   function f4(v) { return v.toFixed(4); }

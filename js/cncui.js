@@ -10,6 +10,8 @@
     ['cncLines', [['nDeck', 'cNDeck', 1], ['nBot', 'cNBot', 1], ['nRail', 'cNRail', 1], ['varMax', 'cVarMax', 0.1],
                   ['varMaxBot', 'cVarMaxBot', 0.1], ['nPts', 'cNPts', 1]]],
     ['cncPlace', [['X0', 'cX0', 0.01], ['Yc', 'cYc', 0.01], ['Tb', 'cTb', 0.1], ['tilt', 'cTilt', 0.01], ['Z0', 'cZ0', 0.01]]],
+    ['cncRough', [['roughStep', 'cRoughStep', 1], ['roughMargin', 'cRoughMargin', 0.5], ['roughLoops', 'cRoughLoops', 1], ['roughLoopStep', 'cRoughLoopStep', 0.5],
+                  ['bridgeL', 'cBridgeL', 1], ['bridgeH', 'cBridgeH', 0.5]]],
     ['cncFeed', [['feed', 'cFeed', 100], ['feedHead', 'cFeedHead', 100], ['safeZ', 'cSafeZ', 1]]]
   ];
 
@@ -23,7 +25,11 @@
         h += '<label><span data-i18n="' + f[1] + '">' + TS.t(f[1]) + '</span><input data-k="' + f[0] + '" type="number" step="' + f[2] + '"></label>';
       });
       if (g[0] === 'cncPlace') h += '<div class="formbtns"><button id="cLevel" data-i18n="cLevel">' + TS.t('cLevel') + '</button><button id="cCenter" data-i18n="cCenter">' + TS.t('cCenter') + '</button></div>';
-      if (g[0] === 'cncLines') h += '<label class="chk"><input data-k="stringer" type="checkbox"> <span data-i18n="cStringer">' + TS.t('cStringer') + '</span></label>';
+      if (g[0] === 'cncLines') h += '<label class="chk"><input data-k="stringer" type="checkbox"> <span data-i18n="cStringer">' + TS.t('cStringer') + '</span></label>' +
+        '<label class="chk"><input data-k="endCut" type="checkbox"> <span data-i18n="cEndCut">' + TS.t('cEndCut') + '</span></label>';
+      if (g[0] === 'cncRough') h += '<label class="chk"><input data-k="rough" type="checkbox"> <span data-i18n="cRough">' + TS.t('cRough') + '</span></label>' +
+        '<label class="chk"><input data-k="bridges" type="checkbox"> <span data-i18n="cBridges">' + TS.t('cBridges') + '</span></label>' +
+        '<label class="chk"><input data-k="plugs" type="checkbox"> <span data-i18n="cPlugs">' + TS.t('cPlugs') + '</span></label>';
       h += '</div>';
     });
     $('cncForm').innerHTML = h;
@@ -114,7 +120,8 @@
     v.poly(boardTop(fr), { fill: 'rgba(240,236,226,0.9)', stroke: '#1d2b36', width: 1.5 }, true);
     var res = U.res[U.side];
     if (res) res.passes.forEach(function (p) {
-      v.poly(p.pts.map(function (q) { return [q[0], q[1]]; }), { stroke: p.kind === 'stringer' ? '#d9480f' : (U.side === 'deck' ? '#1971c2' : '#2f9e44'), width: 1 });
+      var col = p.kind === 'stringer' || p.kind === 'endcut' ? '#d9480f' : p.kind === 'rough' ? '#adb5bd' : (U.side === 'deck' ? '#1971c2' : '#2f9e44');
+      v.poly(p.pts.map(function (q) { return [q[0], q[1]]; }), { stroke: col, width: 1 });
     });
     v.dot(0, 0, 4, '#c2255c');
     v.label(0, 0, '0', '#c2255c', 'left', -8);
@@ -133,6 +140,16 @@
       top.push([a[0], a[2]]); bot.push([b[0], b[2]]);
     }
     v.poly(top.concat(bot.reverse()), { fill: 'rgba(240,236,226,0.95)', stroke: '#1d2b36', width: 1.5 }, true);
+    if (s.bridges) {
+      var frD = new TS.CncFrame(s, 'deck');
+      [0, m.L].forEach(function (xe, i) {
+        var c = frD.p(xe * 10, 0, m.zb(xe) * 10), d = frD.p(xe * 10, 0, m.zd(xe) * 10), mid = (c[2] + d[2]) / 2;
+        var lo = Math.max(c[2], mid - s.bridgeH / 2), hi = Math.min(d[2], mid + s.bridgeH / 2), X = (c[0] + d[0]) / 2;
+        if (U.side === 'bot') { var t = lo; lo = s.Tb - hi; hi = s.Tb - t; }
+        var x0 = i ? X : X - s.bridgeL, x1 = i ? X + s.bridgeL : X;
+        v.poly([[x0, lo], [x1, lo], [x1, hi], [x0, hi]], { fill: 'rgba(217,72,15,0.35)', stroke: '#d9480f', width: 1 }, true);
+      });
+    }
     var res = U.res[U.side];
     if (res) {
       var st = res.passes.filter(function (p) { return p.kind === 'stringer'; })[0];
